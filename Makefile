@@ -24,26 +24,26 @@ SAIL_DEFAULT_INST += riscv_insts_fext.sail riscv_insts_cfext.sail
 ifeq ($(ARCH),RV64)
 SAIL_DEFAULT_INST += riscv_insts_dext.sail riscv_insts_cdext.sail
 endif
+SAIL_DEFAULT_INST += riscv_insts_pext.sail
+# SAIL_DEFAULT_INST += riscv_insts_pext_prelude.sail \
+# riscv_insts_pext_add.sail riscv_insts_pext_sub.sail \
+# riscv_insts_pext_cr.sail riscv_insts_pext_mul.sail \
+# riscv_insts_pext_shift.sail \
+# riscv_insts_pext_misc.sail riscv_insts_pext_unpack.sail \
+# riscv_insts_pext_pack.sail riscv_insts_pext_msb_add_mul.sail \
+# riscv_insts_pext_kmda.sail riscv_insts_pext_muladdsub.sail \
+# riscv_insts_pext_32_mul_64_add.sail \
+# riscv_insts_pext_q15.sail riscv_insts_pext_q31_sat.sail \
+# riscv_insts_pext_32_compute.sail \
+# riscv_insts_pext_compare.sail
 
-SAIL_DEFAULT_INST += riscv_insts_pext_prelude.sail \
-riscv_insts_pext_add.sail riscv_insts_pext_sub.sail \
-riscv_insts_pext_cr.sail riscv_insts_pext_mul.sail \
-riscv_insts_pext_shift.sail \
-riscv_insts_pext_misc.sail riscv_insts_pext_unpack.sail \
-riscv_insts_pext_pack.sail riscv_insts_pext_msb_add_mul.sail \
-riscv_insts_pext_kmda.sail riscv_insts_pext_muladdsub.sail \
-riscv_insts_pext_32_mul_64_add.sail \
-riscv_insts_pext_q15.sail riscv_insts_pext_q31_sat.sail \
-riscv_insts_pext_32_compute.sail \
-riscv_insts_pext_compare.sail
+# ifeq ($(ARCH),RV64)
+# SAIL_DEFAULT_INST += riscv_insts_pext_64only.sail
 
-ifeq ($(ARCH),RV64)
-SAIL_DEFAULT_INST += riscv_insts_pext_64only.sail
-
-SAIL_DEFAULT_INST += riscv_insts_pext_tmp_function_64.sail
-else
-SAIL_DEFAULT_INST += riscv_insts_pext_tmp_function_32.sail
-endif
+# SAIL_DEFAULT_INST += riscv_insts_pext_tmp_function_64.sail
+# else
+# SAIL_DEFAULT_INST += riscv_insts_pext_tmp_function_32.sail
+# endif
 
 
 SAIL_DEFAULT_INST += riscv_insts_zba.sail

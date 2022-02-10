@@ -1,6 +1,10 @@
 /* 
-16-bit Addition & Subtraction Instructions
+16-bit ALU Instructions
 */
+
+/* *****************************************************************/
+/* ********************* auxiliary functions ***********************/
+/* *****************************************************************/
 val radd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n), bits('n)) -> bits('n)
 function radd (v1, v2) =
@@ -78,8 +82,33 @@ function uksub (v1, v2) =
 
 
 
-union clause ast = PEXT_ALU16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
+val smul : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+  (bits('n), bits('n)) -> bits(2 * 'n)
+function smul (v1, v2) =
+  to_bits (2 * 'n, signed(v1) * signed(v2))
+
+val umul : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+  (bits('n), bits('n)) -> bits(2 * 'n)
+function umul (v1, v2) =
+  to_bits (2 * 'n, unsigned(v1) * unsigned(v2))
+
+val khm : forall 'n, 'n == 8 | 'n == 16.
+  (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
+function khm (v1, v2) =
+  let lb : bits('n) = not_vec(EXTS(sail_ones ('n) >> 1)) in
+  if v1 == lb & v2 == lb then { pext_write_OV (0b1); ones ('n) >> 1 }
+  else { if 'n == 8 then { to_bits (2 * 'n, signed(v1) * signed(v2))[14..7] }
+         else { to_bits (2 * 'n, signed(v1) * signed(v2))[30..15] } }
+
+
+
+
+/* *****************************************************************/
+
+
+union clause ast = PEXT_ALU16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
+/*
 mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, RADD16) <->
   0b0000000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, ADD16) <->
@@ -140,37 +169,226 @@ mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, URSTSA16) <->
   0b1101011 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
 mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, URSUB16) <->
   0b0010001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+*/
+
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, ADD16) <->
+  0b0100000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, CMPEQ16) <->
+  0b0100110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, CRAS16) <->
+  0b0100010 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, CRSA16) <->
+  0b0100011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KADD16) <->
+  0b0001000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KCRAS16) <->
+  0b0001010 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KCRSA16) <->
+  0b0001011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KHM16) <->
+  0b1000011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KHMX16) <->
+  0b1001011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KSLL16) <->
+  0b0110010 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KSLRA16) <->
+  0b0101011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KSLRA16_U) <->
+  0b0110011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KSTAS16) <->
+  0b1100010 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KSTSA16) <->
+  0b1100011 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KSUB16) <->
+  0b0001001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, PKBB16) <->
+  0b0000111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, PKBT16) <->
+  0b0001111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, PKTT16) <->
+  0b0010111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, PKTB16) <->
+  0b0011111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, RADD16) <->
+  0b0000000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, RCRAS16) <->
+  0b0000010 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, RCRSA16) <->
+  0b0000011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, RSTAS16) <->
+  0b1011010 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, RSTSA16) <->
+  0b1011011 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, RSUB16) <->
+  0b0000001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SCMPLE16) <->
+  0b0001110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SCMPLT16) <->
+  0b0000110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SLL16) <->
+  0b0101010 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SMAX16) <->
+  0b1000001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SMBB16) <->
+  0b0000100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SMBT16) <->
+  0b0001100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SMTT16) <->
+  0b0010100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SMIN16) <->
+  0b1000000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SMUL16) <->
+  0b1010000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SMULX16) <->
+  0b1010001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SRA16) <->
+  0b0101000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SRA16_U) <->
+  0b0110000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SRL16) <->
+  0b0101001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SRL16_U) <->
+  0b0110001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, STAS16) <->
+  0b1111010 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, STSA16) <->
+  0b1111011 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SUB16) <->
+  0b0100001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UCMPLE16) <->
+  0b0011110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UCMPLT16) <->
+  0b0010110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UKADD16) <->
+  0b0011000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UKCRAS16) <->
+  0b0011010 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UKCRSA16) <->
+  0b0011011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UKSTAS16) <->
+  0b1110010 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UKSTSA16) <->
+  0b1110011 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UKSUB16) <->
+  0b0011001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UMAX16) <->
+  0b1001001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UMIN16) <->
+  0b1001000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UMUL16) <->
+  0b1011000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UMULX16) <->
+  0b1011001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, URADD16) <->
+  0b0010000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, URCRAS16) <->
+  0b0010010 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, URCRSA16) <->
+  0b0010011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, URSTAS16) <->
+  0b1101010 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, URSTSA16) <->
+  0b1101011 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, URSUB16) <->
+  0b0010001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KDMBB16) <->
+  0b1101101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KDMBT16) <->
+  0b1110101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KDMTT16) <->
+  0b1111101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KDMABB16) <->
+  0b1101100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KDMABT16) <->
+  0b1110100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KDMATT16) <->
+  0b1111100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KHMBB16) <->
+  0b1101110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KHMBT16) <->
+  0b1110110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KHMTT16) <->
+  0b1111110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
 function clause execute (PEXT_ALU16(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
   result : xlenbits = zeros();
-  foreach (i from 0 to (sizeof(xlen) - 16) by 16) {
-    let rs1_byte =  slice (rs1_val, i, 16);   
-    let rs2_byte =  slice (rs2_val, i, 16);  
-    result[(i+15)..i] = match op {
-      ADD16  => rs1_byte+rs2_byte,
-      RADD16 => radd(rs1_byte,rs2_byte),
-      URADD16 => uradd(rs1_byte,rs2_byte),
-      KADD16 => kadd(rs1_byte,rs2_byte), 
-      UKADD16 => ukadd(rs1_byte,rs2_byte),
-      SUB16  => rs1_byte-rs2_byte,
-      RSUB16 => rsub(rs1_byte,rs2_byte),
-      URSUB16 => ursub(rs1_byte,rs2_byte),
-      KSUB16 => ksub(rs1_byte,rs2_byte),
-      UKSUB16 => uksub(rs1_byte,rs2_byte),
-      CRSA16 => uksub(rs1_byte,rs2_byte),
-
+  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
+    let rs1_0 =  slice (rs1_val, i, 16);
+    let rs1_1 =  slice (rs1_val, i+16, 16);   
+    let rs2_0 =  slice (rs2_val, i, 16);
+    let rs2_1 =  slice (rs2_val, i+16, 16);
+    result[(i+31)..i] = match op {
+      ADD16    => rs1_1 + rs2_1 @ rs1_0 + rs2_0,
+      RADD16   => radd(rs1_1,rs2_1) @ radd(rs1_0,rs2_0),
+      URADD16  => uradd(rs1_1,rs2_1) @ uradd(rs1_0,rs2_0),
+      KADD16   => kadd(rs1_1,rs2_1) @ kadd(rs1_0,rs2_0), 
+      UKADD16  => ukadd(rs1_1,rs2_1) @ ukadd(rs1_0,rs2_0),
+      SUB16    => rs1_1 - rs2_1 @ rs1_0 - rs2_0,
+      RSUB16   => rsub(rs1_1,rs2_1) @ rsub(rs1_0,rs2_0),
+      URSUB16  => ursub(rs1_1,rs2_1) @ ursub(rs1_0,rs2_0),
+      KSUB16   => ksub(rs1_1,rs2_1) @ ksub(rs1_0,rs2_0),
+      UKSUB16  => uksub(rs1_1,rs2_1) @ uksub(rs1_0,rs2_0),
+      CRAS16   => rs1_1 + rs2_0 @ rs1_0 - rs2_1,
+      RCRAS16  => radd(rs1_1,rs2_0) @ rsub(rs1_0,rs2_1),
+      URCRAS16 => uradd(rs1_1,rs2_0) @ ursub(rs1_0,rs2_1),
+      KCRAS16  => kadd(rs1_1,rs2_0) @ ksub(rs1_0,rs2_1),
+      UKCRAS16 => ukadd(rs1_1,rs2_0) @ uksub(rs1_0,rs2_1),
+      CRSA16   => rs1_1 - rs2_0 @ rs1_0 + rs2_1,
+      RCRSA16  => rsub(rs1_1,rs2_0) @ radd(rs1_0,rs2_1),
+      URCRSA16 => ursub(rs1_1,rs2_0) @ uradd(rs1_0,rs2_1),
+      KCRSA16  => ksub(rs1_1,rs2_0) @ kadd(rs1_0,rs2_1),
+      UKCRSA16 => uksub(rs1_1,rs2_0) @ ukadd(rs1_0,rs2_1),
+      STAS16   => rs1_1 + rs2_1 @ rs1_0 - rs2_0,
+      RSTAS16  => radd(rs1_1,rs2_1) @ rsub(rs1_0,rs2_0),
+      URSTAS16 => uradd(rs1_1,rs2_1) @ ursub(rs1_0,rs2_0),
+      KSTAS16  => kadd(rs1_1,rs2_1) @ ksub(rs1_0,rs2_0),
+      UKSTAS16 => ukadd(rs1_1,rs2_1) @ uksub(rs1_0,rs2_0),
+      STSA16   => rs1_1 - rs2_1 @ rs1_0 + rs2_0,
+      RSTSA16  => rsub(rs1_1,rs2_1) @ radd(rs1_0,rs2_0),
+      URSTSA16 => ursub(rs1_1,rs2_1) @ uradd(rs1_0,rs2_0),
+      KSTSA16  => ksub(rs1_1,rs2_1) @ kadd(rs1_0,rs2_0),
+      UKSTSA16 => uksub(rs1_1,rs2_1) @ ukadd(rs1_0,rs2_0),
     };
   };
   X(rd) = result;
   RETIRE_SUCCESS
 }
 
-mapping p_inst_rs2_rs1_rd_mapping : p_inst_rs2_rs1_rd_op <-> string = {
-    RADD16 <-> "RADD16"
+mapping p_ALU16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
+    ADD16    <-> "ADD16",
+    RADD16   <-> "RADD16",
+    URADD16  <-> "URADD16",
+    KADD16   <-> "KADD16",
+    UKADD16  <-> "UKADD16",
+    SUB16    <-> "SUB16",
+    RSUB16   <-> "RSUB16",
+    URSUB16  <-> "URSUB16",
+    KSUB16   <-> "KSUB16",
+    UKSUB16  <-> "UKSUB16",
+    CRAS16   <-> "CRAS16",
+    RCRAS16  <-> "RCRAS16",
+    URCRAS16 <-> "URCRAS16",
+    KCRAS16  <-> "KCRAS16",
+    UKCRAS16 <-> "UKCRAS16",
+    CRSA16   <-> "CRSA16",
+    RCRSA16  <-> "RCRSA16",
+    URCRSA16 <-> "URCRSA16",
+    KCRSA16  <-> "KCRSA16",
+    UKCRSA16 <-> "UKCRSA16",
+    STAS16   <-> "STAS16",
+    RSTAS16  <-> "RSTAS16",
+    URSTAS16 <-> "URSTAS16",
+    KSTAS16  <-> "KSTAS16",
+    UKSTAS16 <-> "UKSTAS16",
+    STSA16   <-> "STSA16",
+    RSTSA16  <-> "RSTSA16",
+    URSTSA16 <-> "URSTSA16",
+    KSTSA16  <-> "KSTSA16",
+    UKSTSA16 <-> "UKSTSA16"
 
 }
 
 mapping clause assembly = PEXT_ALU16(rs2, rs1, rd, p_inst)
-  <-> p_inst_rs2_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+  <-> p_ALU16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
