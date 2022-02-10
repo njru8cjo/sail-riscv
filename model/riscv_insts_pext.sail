@@ -349,7 +349,7 @@ function clause execute (PEXT_ALU16(rs2, rs1, rd, op)) = {
       RSTSA16  => rsub(rs1_1,rs2_1) @ radd(rs1_0,rs2_0),
       URSTSA16 => ursub(rs1_1,rs2_1) @ uradd(rs1_0,rs2_0),
       KSTSA16  => ksub(rs1_1,rs2_1) @ kadd(rs1_0,rs2_0),
-      UKSTSA16 => uksub(rs1_1,rs2_1) @ ukadd(rs1_0,rs2_0),
+      UKSTSA16 => uksub(rs1_1,rs2_1) @ ukadd(rs1_0,rs2_0)
     };
   };
   X(rd) = result;
