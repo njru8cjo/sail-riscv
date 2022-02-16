@@ -24,7 +24,8 @@ SAIL_DEFAULT_INST += riscv_insts_fext.sail riscv_insts_cfext.sail
 ifeq ($(ARCH),RV64)
 SAIL_DEFAULT_INST += riscv_insts_dext.sail riscv_insts_cdext.sail
 endif
-SAIL_DEFAULT_INST += riscv_insts_pext.sail
+SAIL_DEFAULT_INST += riscv_insts_pext.sail \
+riscv_insts_pext_8.sail
 # SAIL_DEFAULT_INST += riscv_insts_pext_prelude.sail \
 # riscv_insts_pext_add.sail riscv_insts_pext_sub.sail \
 # riscv_insts_pext_cr.sail riscv_insts_pext_mul.sail \
