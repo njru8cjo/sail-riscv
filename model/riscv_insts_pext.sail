@@ -384,6 +384,18 @@ mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, URSTAS16) <->
   0b1101010 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
 mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, URSTSA16) <->
   0b1101011 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
+mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, PKBB16) <->
+  0b0000111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, PKBT16) <->
+  0b0001111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, PKTT16) <->
+  0b0010111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, PKTB16) <->
+  0b0011111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, KHM16) <->
+  0b1000011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, KHMX16) <->
+  0b1001011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 
 
 function clause execute (PEXT_CROSS_16(rs2, rs1, rd, op)) = {
@@ -416,8 +428,12 @@ function clause execute (PEXT_CROSS_16(rs2, rs1, rd, op)) = {
       URSTSA16 => ursub(rs1_1,rs2_1) @ uradd(rs1_0,rs2_0),
       KSTSA16  => ksub(rs1_1,rs2_1) @ kadd(rs1_0,rs2_0),
       UKSTSA16 => uksub(rs1_1,rs2_1) @ ukadd(rs1_0,rs2_0),
-      KHM16   =>  khm (rs1_1, rs2_1) @ khm (rs1_0, rs2_0), 
-      KHMX16  =>  khm (rs1_1, rs2_0) @ khm (rs1_0, rs2_1)
+      KHM16    => khm (rs1_1, rs2_1) @ khm (rs1_0, rs2_0), 
+      KHMX16   => khm (rs1_1, rs2_0) @ khm (rs1_0, rs2_1),
+      PKBB16   => rs1_0 @ rs2_0,
+      PKBT16   => rs1_0 @ rs2_1,
+      PKTB16   => rs1_1 @ rs2_0,
+      PKTT16   => rs1_1 @ rs2_1
     };
   };
   X(rd) = result;
@@ -444,7 +460,13 @@ mapping p_CROSS_16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     RSTSA16  <-> "RSTSA16",
     URSTSA16 <-> "URSTSA16",
     KSTSA16  <-> "KSTSA16",
-    UKSTSA16 <-> "UKSTSA16"
+    UKSTSA16 <-> "UKSTSA16",
+    KHM16  <-> "KHM16",
+    KHMX16  <-> "KHMX16",
+    PKBB16  <-> "PKBB16",
+    PKBT16 <-> "PKBT16",
+    PKTB16  <-> "PKTB16",
+    PKTT16  <-> "PKTT16"
 
 }
 
@@ -453,21 +475,11 @@ mapping clause assembly = PEXT_CROSS_16(rs2, rs1, rd, p_inst)
 
 /*
 16bit MUL Instruction
-
+KHM & KHMX write in CROSS AST 
 */
 
 union clause ast = PEXT_MUL_16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
-mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, KHM16) <->
-  0b1000011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, KHMX16) <->
-  0b1001011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, SMBB16) <->
-  0b0000100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, SMBT16) <->
-  0b0001100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, SMTT16) <->
-  0b0010100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, SMUL16) <->
   0b1010000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, SMULX16) <->
@@ -476,6 +488,7 @@ mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, UMUL16) <->
   0b1011000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_MUL_16(rs2, rs1, rd, UMULX16) <->
   0b1011001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+
 
 function clause execute (PEXT_MUL_16(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
@@ -491,11 +504,12 @@ function clause execute (PEXT_MUL_16(rs2, rs1, rd, op)) = {
     let rd1 = rd0 + 1 ;
     result : xlenbits = zeros();
     result1 : xlenbits = zeros();
+    Zero : xlenbits = zeros();
     match (op) {
       SMUL16  => { result  =  smul (rs1_0, rs2_0); result1 =  smul (rs1_1, rs2_1)},
       SMULX16 => { result  =  smul (rs1_0, rs2_1); result1 =  smul (rs1_1, rs2_0)},
       UMUL16  => { result  =  umul (rs1_0, rs2_0); result1 =  umul (rs1_1, rs2_1)},
-      UMULX16 => { result  =  umul (rs1_0, rs2_1); result1 =  umul (rs1_1, rs2_0)} 
+      UMULX16 => { result  =  umul (rs1_0, rs2_1); result1 =  umul (rs1_1, rs2_0)}
       };
     X(rd0) = result;
     X(rd1) = result1;
@@ -507,7 +521,7 @@ function clause execute (PEXT_MUL_16(rs2, rs1, rd, op)) = {
       SMUL16  =>   smul(rs1_1, rs2_1) @ smul(rs1_0, rs2_0),
       SMULX16 =>   smul(rs1_1, rs2_0) @ smul(rs1_0, rs2_1),
       UMUL16  =>   umul(rs1_1, rs2_1) @ umul(rs1_0, rs2_0),
-      UMULX16 =>   umul(rs1_1, rs2_0) @ umul(rs1_0, rs2_1) 
+      UMULX16 =>   umul(rs1_1, rs2_0) @ umul(rs1_0, rs2_1)
     };
     X(rd) = result;
     RETIRE_SUCCESS
@@ -520,7 +534,6 @@ mapping p_MUL_16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     SMULX16  <-> "SMULX16",
     UMUL16   <-> "UMUL16",
     UMULX16  <-> "UMULX16"
-
 }
 
 mapping clause assembly = PEXT_MUL_16(rs2, rs1, rd, p_inst)
@@ -590,5 +603,7 @@ mapping p_inst_imm4_rs1_rd_mapping : p_inst_imm4_rs1_rd_op <-> string = {
 
 mapping clause assembly = P_INST_IMM4_RS1_RD(imm4, rs1, rd, p_inst)
   <-> p_inst_imm4_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_4(imm4)
+
+
 
 
