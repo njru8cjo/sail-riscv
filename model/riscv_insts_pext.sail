@@ -392,7 +392,7 @@ function clause execute (P_INST_IMM4_RS1_RD(imm4, rs1, rd, op)) = {
 
     result[(i+15)..i] = match op {
       KSLLI16    =>  kshift_left_logic(rs1_word, sa),
-      SCLIP16    =>  kshift_left_logic(rs1_word, sa),
+      SCLIP16    =>  sclip(rs1_word, sa),
       SLLI16    =>  shift_left_logic(rs1_word, sa),
       SRAI16    =>  shift_right_arith(rs1_word, sa),
       SRAI16_U    =>  shift_right_arith_u(rs1_word, sa),

@@ -2,7 +2,7 @@
 8-bit ALU Instructions
 */
 
-/* 8bits add, sub and compare instructions */
+/* 8bits add, sub, compare and misc instructions */
 union clause ast = PEXT_ALU8 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_ALU8(rs2, rs1, rd, ADD8) <->
@@ -33,6 +33,7 @@ mapping clause encdec = PEXT_ALU8(rs2, rs1, rd, SCMPLE8) <->
   0b0001111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_ALU8(rs2, rs1, rd, SCMPLT8) <->
   0b0000111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+
 mapping clause encdec = PEXT_ALU8(rs2, rs1, rd, SMAX8) <->
   0b1000101 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_ALU8(rs2, rs1, rd, SMIN8) <->
@@ -206,8 +207,8 @@ function clause execute (PEXT_SHIFT8(rs2, rs1, rd, op)) = {
       SRL8_U   => shift_right_logic_u(rs1_byte, EXTZ(rs2_val[2..0])),
       SLL8     => shift_left_logic(rs1_byte, EXTZ(rs2_val[2..0])),
       KSLL8     => kshift_left_logic(rs1_byte, EXTZ(rs2_val[2..0])),
-      KSLRA8     => shift_right_arith(rs1_byte, EXTZ(rs2_val[3..0])),
-      KSLRA8_U   => shift_right_arith_u(rs1_byte, EXTZ(rs2_val[3..0]))
+      KSLRA8     => shift_right_arith(rs1_byte, EXTS(rs2_val[3..0])),
+      KSLRA8_U   => shift_right_arith_u(rs1_byte, EXTS(rs2_val[3..0]))
     };
   };
   X(rd) = result;
@@ -227,3 +228,60 @@ mapping p_SHIFT8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 
 mapping clause assembly = PEXT_SHIFT8(rs2, rs1, rd, p_inst)
   <-> p_SHIFT8_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+
+/* 3bits imm instructions */
+union clause ast = P_INST_IMM3_RS1_RD : (bits(3), regidx, regidx, p_inst_imm3_rs1_rd_op)
+
+/*mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, INSB) <->
+  0b1010110 @ 0b00 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111*/
+mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, KSLLI8) <->
+  0b0111110 @ 0b01 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, SCLIP8) <->
+  0b1000110 @ 0b00 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, SLLI8) <->
+  0b0111110 @ 0b00 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, SRAI8) <->
+  0b0111100 @ 0b00 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, SRAI8_U) <->
+  0b0111100 @ 0b01 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, SRLI8) <->
+  0b0111101 @ 0b00 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, SRLI8_U) <->
+  0b0111101 @ 0b01 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, UCLIP8) <->
+  0b1000110 @ 0b10 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (P_INST_IMM3_RS1_RD(imm3, rs1, rd, op)) = {
+  let rs1_val = X(rd);
+  let sa : byte = EXTZ(imm3);
+  result : xlenbits = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 8) by 8) {
+    let rs1_byte = slice(rs1_val, i, 8);
+    result[(i+7)..i] = match op {
+      SRAI8     => shift_right_arith(rs1_byte, sa),
+      SRAI8_U   => shift_right_arith_u(rs1_byte, sa),
+      SRLI8     => shift_right_logic(rs1_byte, sa),
+      SRLI8_U   => shift_right_logic_u(rs1_byte, sa),
+      SLLI8     => shift_left_logic(rs1_byte, sa),
+      KSLLI8    => kshift_left_logic(rs1_byte, sa),
+      SCLIP8    => sclip(rs1_byte, sa),
+      UCLIP8    => uclip(rs1_byte, sa)
+    };
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+}
+
+mapping p_inst_imm3_rs1_rd_mapping : p_inst_imm3_rs1_rd_op <-> string = {
+  KSLLI8 <-> "KSLLI8",
+  SLLI8  <-> "SLLI8",
+  SRAI8  <-> "SRAI8",
+  SRAI8_U <-> "SRAI8_U",
+  SRLI8 <-> "SRLI8",
+  SRLI8_U <-> "SRLI8_U",
+  SCLIP8 <-> "SCLIP8",
+  UCLIP8 <-> "UCLIP8"
+}
+
+mapping clause assembly = P_INST_IMM3_RS1_RD(imm3, rs1, rd, p_inst)
+  <-> p_inst_imm3_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_3(imm3)
