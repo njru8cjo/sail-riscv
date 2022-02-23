@@ -83,10 +83,10 @@ function uradd (v1, v2) =
 val kadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function kadd (v1, v2) =
-  let ub : bits(64) = EXTS(sail_ones ('n) >> 1) in
-  let lb : bits(64) = not_vec (ub) in
-  let v1ext : bits(64) = EXTS(v1) in
-  let v2ext : bits(64) = EXTS(v2) in
+  let ub : bits(66) = EXTS(sail_ones ('n) >> 1) in
+  let lb : bits(66) = not_vec (ub) in
+  let v1ext : bits(66) = EXTS(v1) in
+  let v2ext : bits(66) = EXTS(v2) in
   let sumext = v1ext + v2ext in
   if sumext <_s lb then { pext_write_OV (0b1); not_vec (ones ('n) >> 1) }
   else if ub <_s sumext then { pext_write_OV (0b1); ones ('n) >> 1 }
@@ -95,9 +95,9 @@ function kadd (v1, v2) =
 val ukadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function ukadd (v1, v2) =
-  let ub : bits(64) = EXTZ(sail_ones ('n)) in
-  let v1ext : bits(64) = EXTZ(v1) in
-  let v2ext : bits(64) = EXTZ(v2) in
+  let ub : bits(66) = EXTZ(sail_ones ('n)) in
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
   let sumext = v1ext + v2ext in
   if ub <_u sumext then { pext_write_OV (0b1); ones('n) }
   else { slice (sumext, 0, 'n) }
@@ -120,10 +120,10 @@ function ursub (v1, v2) =
 val ksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function ksub (v1, v2) =
-  let ub : bits(64) = EXTS(sail_ones ('n) >> 1) in
-  let lb : bits(64) = not_vec (ub) in
-  let v1ext : bits(64) = EXTS(v1) in
-  let v2ext : bits(64) = EXTS(v2) in
+  let ub : bits(66) = EXTS(sail_ones ('n) >> 1) in
+  let lb : bits(66) = not_vec (ub) in
+  let v1ext : bits(66) = EXTS(v1) in
+  let v2ext : bits(66) = EXTS(v2) in
   let diffext = v1ext - v2ext in
   if diffext <_s lb then { pext_write_OV (0b1); not_vec (ones ('n) >> 1) }
   else if ub <_s diffext then { pext_write_OV (0b1); ones ('n) >> 1 }
@@ -133,9 +133,9 @@ function ksub (v1, v2) =
 val uksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function uksub (v1, v2) =
-  let ub : bits(64) = EXTZ(sail_ones ('n)) in
-  let v1ext : bits(64) = EXTZ(v1) in
-  let v2ext : bits(64) = EXTZ(v2) in
+  let ub : bits(66) = EXTZ(sail_ones ('n)) in
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
   let diffext = v1ext - v2ext in
   if ub <_u diffext then { pext_write_OV (0b1); zeros('n) }
   else { slice (diffext, 0, 'n) }

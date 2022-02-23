@@ -2,32 +2,33 @@
 64-bits profile instructions
 */
 
-/* 8bits add, sub, compare and misc instructions */
-union clause ast = PEXT_INST_64BITS_PROFILE : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
+/* 64bits profile add, sub instructions */
+union clause ast = PEXT_INST_64BITS_ADD_SUB : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, ADD64) <->
+/* 64 bits profile ADD encode decode */
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, ADD64) <->
   0b1100000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, KADD64) <->
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, KADD64) <->
   0b1001000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, RADD64) <->
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, RADD64) <->
   0b1000000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, UKADD64) <->
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, UKADD64) <->
   0b1011000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, URADD64) <->
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, URADD64) <->
   0b1010000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, SUB64) <->
+/* 64 bits profile SUB encode decode */
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, SUB64) <->
   0b1100001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, KSUB64) <->
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, KSUB64) <->
   0b1001001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, RSUB64) <->
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, RSUB64) <->
   0b1000001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, UKSUB64) <->
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, UKSUB64) <->
   0b1011001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, URSUB64) <->
+mapping clause encdec = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, URSUB64) <->
   0b1010001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
-function clause execute (PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, op)) = {
+function clause execute (PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, op)) = {
   results : bits(64) = zeros();
   rs1_val : bits(64) = zeros();
   rs2_val : bits(64) = zeros();
@@ -61,7 +62,7 @@ function clause execute (PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, op)) = {
   RETIRE_SUCCESS
 }
 
-mapping p_64bits_profile_mapping : p_inst_rs2_rs1_rd_op <-> string = {
+mapping p_64bits_add_sub_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     ADD64    <-> "ADD64",
     RADD64   <-> "RADD64",
     URADD64  <-> "URADD64",
@@ -74,5 +75,139 @@ mapping p_64bits_profile_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     UKSUB64  <-> "UKSUB64"
 }
 
-mapping clause assembly = PEXT_INST_64BITS_PROFILE(rs2, rs1, rd, p_inst)
-  <-> p_64bits_profile_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+mapping clause assembly = PEXT_INST_64BITS_ADD_SUB(rs2, rs1, rd, p_inst)
+  <-> p_64bits_add_sub_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+
+/* 64bits profile 32 bits mul with 64bits add/sub instructions */
+union clause ast = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
+
+mapping clause encdec = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, SMAR64) <->
+  0b1000010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, SMSR64) <->
+  0b1000011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, UMAR64) <->
+  0b1010010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, UMSR64) <->
+  0b1010011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, KMAR64) <->
+  0b1001010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, KMSR64) <->
+  0b1001011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, UKMAR64) <->
+  0b1011010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, UKMSR64) <->
+  0b1011011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+
+function clause execute (PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  let rs2_val = X(rs2);
+  result : bits(64) = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
+    let rs1_word = slice(rs1_val, i, 32);
+    let rs2_word = slice(rs2_val, i, 32);
+    match op {
+      SMAR64   =>  { result = result + smul(rs1_word, rs2_word); },
+      SMSR64   =>  { result = result - smul(rs1_word, rs2_word); },
+      UMAR64   =>  { result = result + umul(rs1_word, rs2_word); },
+      UMSR64   =>  { result = result - umul(rs1_word, rs2_word); },
+      KMAR64   =>  { result = kadd(result, smul(rs1_word, rs2_word)); },
+      KMSR64   =>  { result = ksub(result, smul(rs1_word, rs2_word)); },
+      UKMAR64  =>  { result = ukadd(result, umul(rs1_word, rs2_word)); },
+      UKMSR64  =>  { result = uksub(result, umul(rs1_word, rs2_word)); }
+    };
+  };
+  if sizeof(xlen) == 32
+  then {
+    result = result + X(rd | 0b00001) @ X(rd & 0b11110);
+    X(rd | 0b00001) = result[63..32];
+    X(rd & 0b11110) = result[31..0];
+  }
+  else {
+    X(rd) = X(rd) + result;
+  };
+  RETIRE_SUCCESS
+}
+
+mapping p_32bits_mul_with_64bits_add_sub_mapping : p_inst_rs2_rs1_rd_op <-> string = {
+    SMAR64   <-> "SMAR64",
+    SMSR64   <-> "SMSR64",
+    UMAR64   <-> "UMAR64",
+    UMSR64   <-> "UMSR64",
+    KMAR64   <-> "KMAR64",
+    KMSR64   <-> "KMSR64",
+    UKMAR64  <-> "UKMAR64",
+    UKMSR64  <-> "UKMSR64"
+}
+
+mapping clause assembly = PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, p_inst)
+  <-> p_32bits_mul_with_64bits_add_sub_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+
+/* 64bits profile 16 bits mul with 64bits add/sub instructions */
+union clause ast = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
+
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALBB) <->
+  0b1000100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALBT) <->
+  0b1001100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALTT) <->
+  0b1010100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALDA) <->
+  0b1000110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALXDA) <->
+  0b1001110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALDS) <->
+  0b1000101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALDRS) <->
+  0b1001101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALXDS) <->
+  0b1010101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111 
+
+function clause execute (PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  let rs2_val = X(rs2);
+  result : bits(64) = zeros();
+  foreach (i from 0 to sizeof(xlen) by 32) {
+    let rs1_half_top = slice(rs1_val, i+16, 16);
+    let rs1_half_bottom = slice(rs1_val, i, 16);
+    let rs2_half_top = slice(rs2_val, i+16, 16);
+    let rs2_half_bottom = slice(rs2_val, i, 16);
+    match op {
+      SMALBB   =>  { result = result + EXTS(smul(rs1_half_bottom, rs2_half_bottom));},
+      SMALBT   =>  { result = result + EXTS(smul(rs1_half_bottom, rs2_half_top));},
+      SMALTT   =>  { result = result + EXTS(smul(rs1_half_top, rs2_half_top));},
+      SMALDA   =>  { result = result + EXTS(smul(rs1_half_top, rs2_half_top)) + EXTS(smul(rs1_half_bottom, rs2_half_bottom));},
+      SMALXDA  =>  { result = result + EXTS(smul(rs1_half_top, rs2_half_bottom)) + EXTS(smul(rs1_half_bottom, rs2_half_top));},
+      SMALDS   =>  { result = result + EXTS(smul(rs1_half_top, rs2_half_top)) - EXTS(smul(rs1_half_bottom, rs2_half_bottom));},
+      SMALDRS  =>  { result = result + EXTS(smul(rs1_half_bottom, rs2_half_bottom)) - EXTS(smul(rs1_half_top, rs2_half_top));},
+      SMALXDS  =>  { result = result + EXTS(smul(rs1_half_top, rs2_half_bottom)) - EXTS(smul(rs1_half_bottom, rs2_half_top));},
+      SMSLDA   =>  { result = result - EXTS(smul(rs1_half_top, rs2_half_top)) - EXTS(smul(rs1_half_bottom, rs2_half_bottom));},
+      SMSLXDA  =>  { result = result - EXTS(smul(rs1_half_top, rs2_half_bottom)) - EXTS(smul(rs1_half_bottom, rs2_half_top));}
+    };
+  };
+  if sizeof(xlen) == 32
+  then {
+    result = result + X(rd | 0b00001) @ X(rd & 0b11110);
+    X(rd | 0b00001) = result[63..32];
+    X(rd & 0b11110) = result[31..0];
+  }
+  else {
+    X(rd) = X(rd) + result;
+  };
+  RETIRE_SUCCESS
+}
+
+mapping p_16bits_mul_64bits_add_sub_mapping : p_inst_rs2_rs1_rd_op <-> string = {
+    SMALBB   <-> "SMALBB",
+    SMALBT   <-> "SMALBT",
+    SMALTT   <-> "SMALTT",
+    SMALDA   <-> "SMALDA",
+    SMALXDA  <-> "SMALXDA",
+    SMALDS   <-> "SMALDS",
+    SMALDRS  <-> "SMALDRS",
+    SMALXDS  <-> "SMALXDS",
+    SMSLDA   <-> "SMSLDA",
+    SMSLXDA  <-> "SMSLXDA"
+}
+
+mapping clause assembly = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, p_inst)
+  <-> p_16bits_mul_64bits_add_sub_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
