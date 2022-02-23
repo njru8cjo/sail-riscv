@@ -229,11 +229,9 @@ mapping p_SHIFT8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_SHIFT8(rs2, rs1, rd, p_inst)
   <-> p_SHIFT8_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/* 3bits imm instructions */
+/* 8bits imm3 instructions */
 union clause ast = P_INST_IMM3_RS1_RD : (bits(3), regidx, regidx, p_inst_imm3_rs1_rd_op)
 
-/*mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, INSB) <->
-  0b1010110 @ 0b00 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111*/
 mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, KSLLI8) <->
   0b0111110 @ 0b01 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, SCLIP8) <->
@@ -252,7 +250,7 @@ mapping clause encdec = P_INST_IMM3_RS1_RD(imm3, rs1, rd, UCLIP8) <->
   0b1000110 @ 0b10 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
 
 function clause execute (P_INST_IMM3_RS1_RD(imm3, rs1, rd, op)) = {
-  let rs1_val = X(rd);
+  let rs1_val = X(rs1);
   let sa : byte = EXTZ(imm3);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 8) by 8) {
@@ -285,3 +283,133 @@ mapping p_inst_imm3_rs1_rd_mapping : p_inst_imm3_rs1_rd_op <-> string = {
 
 mapping clause assembly = P_INST_IMM3_RS1_RD(imm3, rs1, rd, p_inst)
   <-> p_inst_imm3_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_3(imm3)
+
+/* 8bits one register instructions */
+union clause ast = P_INST_RS1_RD : (regidx, regidx, p_inst_rs1_rd_op)
+
+mapping clause encdec = P_INST_RS1_RD(rs1, rd, CLRS8) <->
+  0b1010111 @ 0b00000 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_RS1_RD(rs1, rd, CLO8) <->
+  0b1010111 @ 0b00011 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_RS1_RD(rs1, rd, CLZ8) <->
+  0b1010111 @ 0b00001 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_RS1_RD(rs1, rd, KABS8) <->
+  0b1010110 @ 0b10000 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (P_INST_RS1_RD(rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  result : xlenbits = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 8) by 8) {
+    let rs1_byte = slice(rs1_val, i, 8);
+    result[(i+7)..i] = match op {
+      CLRS8    => clrs(rs1_byte),
+      CLO8     => clo(rs1_byte),
+      CLZ8     => clz(rs1_byte),
+      KABS8    => kabs(rs1_byte)
+    };
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+}
+
+mapping p_inst_rs1_rd_mapping : p_inst_rs1_rd_op <-> string = {
+  CLRS8 <-> "CLRS8",
+  CLO8  <-> "CLO8",
+  CLZ8  <-> "CLZ8",
+  KABS8 <-> "KABS8"
+}
+
+mapping clause assembly = P_INST_RS1_RD(rs1, rd, p_inst)
+  <-> p_inst_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
+
+/* 8bits swap and unpack instructions */
+union clause ast = P_INST_SWAP_UNPACK : (regidx, regidx, p_inst_rs1_rd_op)
+
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, SUNPKD810) <->
+  0b1010110 @ 0b01000 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, SUNPKD820) <->
+  0b1010110 @ 0b01001 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, SUNPKD830) <->
+  0b1010110 @ 0b01010 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, SUNPKD831) <->
+  0b1010110 @ 0b01011 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, SUNPKD832) <->
+  0b1010110 @ 0b10011 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, SWAP8) <->
+  0b1010110 @ 0b11000 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, ZUNPKD810) <->
+  0b1010110 @ 0b01100 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, ZUNPKD820) <->
+  0b1010110 @ 0b01101 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, ZUNPKD830) <->
+  0b1010110 @ 0b01110 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, ZUNPKD831) <->
+  0b1010110 @ 0b01111 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_SWAP_UNPACK(rs1, rd, ZUNPKD832) <->
+  0b1010110 @ 0b10111 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (P_INST_SWAP_UNPACK(rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  result : xlenbits = zeros();
+  resultH : bits(16) = zeros();
+  resultL : bits(16) = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
+    let rs1_byte0 = slice(rs1_val, i, 8);
+    let rs1_byte1 = slice(rs1_val, i+8, 8);
+    let rs1_byte2 = slice(rs1_val, i+16, 8);
+    let rs1_byte3 = slice(rs1_val, i+24, 8);
+
+    result[(i+31)..i] = match op {
+      SWAP8      =>  rs1_byte2 @ rs1_byte3 @ rs1_byte0 @ rs1_byte1,
+      SUNPKD810  =>  { resultH = EXTS(rs1_byte1); 
+                       resultL = EXTS(rs1_byte0);
+                       resultH @ resultL},
+      SUNPKD820  =>  { resultH = EXTS(rs1_byte2); 
+                     resultL = EXTS(rs1_byte0);
+                     resultH @ resultL },
+      SUNPKD830  =>  { resultH = EXTS(rs1_byte3); 
+                     resultL = EXTS(rs1_byte0);
+                     resultH @ resultL },
+      SUNPKD831  =>  { resultH = EXTS(rs1_byte3); 
+                     resultL = EXTS(rs1_byte1);
+                     resultH @ resultL },
+      SUNPKD832  =>  { resultH = EXTS(rs1_byte3); 
+                     resultL = EXTS(rs1_byte2);
+                     resultH @ resultL },
+      ZUNPKD810  =>  { resultH = EXTZ(rs1_byte1); 
+                     resultL = EXTZ(rs1_byte0);
+                     resultH @ resultL },
+      ZUNPKD820  =>  { resultH = EXTZ(rs1_byte2); 
+                     resultL = EXTZ(rs1_byte0);
+                     resultH @ resultL },
+      ZUNPKD830  =>  { resultH = EXTZ(rs1_byte3); 
+                     resultL = EXTZ(rs1_byte0);
+                     resultH @ resultL },
+      ZUNPKD831  =>  { resultH = EXTZ(rs1_byte3); 
+                     resultL = EXTZ(rs1_byte1);
+                     resultH @ resultL },
+      ZUNPKD832  =>  { resultH = EXTZ(rs1_byte3); 
+                     resultL = EXTZ(rs1_byte2);
+                     resultH @ resultL }
+    }
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+}
+
+mapping p_inst_swap_unpack_mapping : p_inst_rs1_rd_op <-> string = {
+  SWAP8     <-> "SWAP8",
+  SUNPKD810 <-> "SUNPKD810",
+  SUNPKD820 <-> "SUNPKD820",
+  SUNPKD830 <-> "SUNPKD830",
+  SUNPKD831 <-> "SUNPKD831",
+  SUNPKD832 <-> "SUNPKD832",
+  ZUNPKD810 <-> "ZUNPKD810",
+  ZUNPKD820 <-> "ZUNPKD820",
+  ZUNPKD830 <-> "ZUNPKD830",
+  ZUNPKD831 <-> "ZUNPKD831",
+  ZUNPKD832 <-> "ZUNPKD832"
+}
+
+mapping clause assembly = P_INST_SWAP_UNPACK(rs1, rd, p_inst)
+  <-> p_inst_swap_unpack_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
