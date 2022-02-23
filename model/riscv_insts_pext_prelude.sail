@@ -66,21 +66,21 @@ mapping pext_width_mnemonic : word_width <-> string = {
 /* *****************************************************************/
 
 /* add auxiliary functions */
-val radd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+val radd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function radd (v1, v2) =
   let v1ext : bits(64) = EXTS(v1) in
   let v2ext : bits(64) = EXTS(v2) in
   slice ((v1ext + v2ext) >> 1, 0, 'n)
 
-val uradd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+val uradd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function uradd (v1, v2) =
   let v1ext : bits(64) = EXTZ(v1) in
   let v2ext : bits(64) = EXTZ(v2) in
   slice ((v1ext + v2ext) >> 1, 0, 'n)
 
-val kadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+val kadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function kadd (v1, v2) =
   let ub : bits(64) = EXTS(sail_ones ('n) >> 1) in
@@ -92,7 +92,7 @@ function kadd (v1, v2) =
   else if ub <_s sumext then { pext_write_OV (0b1); ones ('n) >> 1 }
   else { slice (sumext, 0, 'n) }
 
-val ukadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+val ukadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function ukadd (v1, v2) =
   let ub : bits(64) = EXTZ(sail_ones ('n)) in
@@ -103,21 +103,21 @@ function ukadd (v1, v2) =
   else { slice (sumext, 0, 'n) }
 
 /* sub auxiliary functions */
-val rsub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+val rsub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function rsub (v1, v2) =
   let v1ext : bits(64) = EXTS(v1) in
   let v2ext : bits(64) = EXTS(v2) in
   slice ((v1ext - v2ext) >> 1, 0, 'n)
 
-val ursub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+val ursub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function ursub (v1, v2) =
   let v1ext : bits(64) = EXTZ(v1) in
   let v2ext : bits(64) = EXTZ(v2) in
   slice ((v1ext - v2ext) >> 1, 0, 'n)
 
-val ksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+val ksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function ksub (v1, v2) =
   let ub : bits(64) = EXTS(sail_ones ('n) >> 1) in
@@ -130,7 +130,7 @@ function ksub (v1, v2) =
   else { slice (diffext, 0, 'n) }
 
 
-val uksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+val uksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function uksub (v1, v2) =
   let ub : bits(64) = EXTZ(sail_ones ('n)) in
