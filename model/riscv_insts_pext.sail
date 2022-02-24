@@ -1,8 +1,12 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> ff5f116409a542dcc08b43f8d50675ee8f7d85b1
 /* 
 16-bit ALU Instructions
 */
 
+<<<<<<< HEAD
 /* *****************************************************************/
 /* ********************* auxiliary functions ***********************/
 /* *****************************************************************/
@@ -186,6 +190,8 @@ function sclip (v, m) =
 
 
 
+=======
+>>>>>>> ff5f116409a542dcc08b43f8d50675ee8f7d85b1
 /* ############ */
 union clause ast = PEXT_ALU16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
@@ -537,16 +543,9 @@ mapping p_MUL_16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_MUL_16(rs2, rs1, rd, p_inst)
   <-> p_MUL_16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-
-
-
-
 /*
   4bit Immediate instruction
 */
-
-
-
 union clause ast = P_INST_IMM4_RS1_RD : (bits(4), regidx, regidx, p_inst_imm4_rs1_rd_op)
 mapping clause encdec = P_INST_IMM4_RS1_RD(imm4, rs1, rd, KSLLI16) <->
   0b0111010 @ 0b1 @ imm4 @ rs1 @ 0b000 @ rd @ 0b1110111
@@ -601,7 +600,3 @@ mapping p_inst_imm4_rs1_rd_mapping : p_inst_imm4_rs1_rd_op <-> string = {
 
 mapping clause assembly = P_INST_IMM4_RS1_RD(imm4, rs1, rd, p_inst)
   <-> p_inst_imm4_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_4(imm4)
-
-
-
-

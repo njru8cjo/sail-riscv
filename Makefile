@@ -25,7 +25,11 @@ ifeq ($(ARCH),RV64)
 SAIL_DEFAULT_INST += riscv_insts_dext.sail riscv_insts_cdext.sail
 endif
 SAIL_DEFAULT_INST += riscv_insts_pext_prelude.sail riscv_insts_pext.sail \
-riscv_insts_pext_8.sail riscv_insts_pext_partial.sail riscv_insts_pext_non_simd.sail
+riscv_insts_pext_8.sail riscv_insts_pext_partial.sail riscv_insts_pext_non_simd.sail \
+riscv_insts_pext_64bits_profile.sail
+ifeq ($(ARCH),RV64)
+SAIL_DEFAULT_INST += riscv_insts_pext_RV64_only.sail
+endif
 # SAIL_DEFAULT_INST += riscv_insts_pext_prelude.sail \
 # riscv_insts_pext_add.sail riscv_insts_pext_sub.sail \
 # riscv_insts_pext_cr.sail riscv_insts_pext_mul.sail \
