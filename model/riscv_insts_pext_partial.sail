@@ -485,3 +485,57 @@ function clause execute (PEXT_SMAL(rs2, rs1, rd)) = {
 
 mapping clause assembly = PEXT_SMAL(rs2, rs1, rd)
   <-> "SMAL" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+
+/*
+2.3.6. Miscellaneous Instructions
+
+*/
+
+
+/*
+2.3.7. 8-bit Multiply with 32-bit Add Instructions
+
+*/
+union clause ast = PEXT_8_32_MUL_ADD : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
+
+
+mapping clause encdec = PEXT_8_32_MUL_ADD(rs2, rs1, rd, SMAQA) <->
+  0b1100100 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_8_32_MUL_ADD(rs2, rs1, rd, SMAQA_SU) <->
+  0b1100101 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_8_32_MUL_ADD(rs2, rs1, rd, UMAQA) <->
+  0b1100110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (PEXT_8_32_MUL_ADD(rs2, rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  let rs2_val = X(rs2);
+  let rd_val  = X(rd);
+  result : xlenbits = zeros();
+  tmp_value : bits(32) = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 8) by 8) {
+    let rs1_8 =  slice (rs1_val, i, 8);
+    let rs2_8 =  slice (rs2_val, i, 8);
+    
+    tmp_value = match op {
+      SMAQA    => tmp_value + EXTS(smul(rs1_8,rs2_8)),
+      UMAQA    => tmp_value + EXTZ(umul(rs1_8,rs2_8)),
+      SMAQA_SU => tmp_value + EXTS(sumul(rs1_8,rs2_8))
+    };
+    if( i==24 | i==56)
+    then {
+      let rd_32  =  slice (rd_val, (i + 8 - 32), 32);
+      result[(i + 7)..(i - 24)] = rd_32 + tmp_value;
+    }
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+}
+
+mapping p_8_32_muladd_mapping : p_inst_rs2_rs1_rd_op <-> string = {
+    SMAQA    <-> "SMAQA",
+    UMAQA   <-> "UMAQA",
+    SMAQA_SU  <-> "SMAQA_SU"
+}
+
+mapping clause assembly = PEXT_8_32_MUL_ADD(rs2, rs1, rd, p_inst)
+  <-> p_8_32_muladd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)

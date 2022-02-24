@@ -1,5 +1,4 @@
-type byte = bits(8)
-type dword = bits(64)
+
 /* 
 16-bit ALU Instructions
 */
@@ -173,7 +172,14 @@ function khm (v1, v2) =
   else { if 'n == 8 then { to_bits (2 * 'n, signed(v1) * signed(v2))[14..7] }
          else { to_bits (2 * 'n, signed(v1) * signed(v2))[30..15] } }
 
-
+val sclip : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
+  (bits('n), byte) -> bits('n) effect {rreg, wreg}
+function sclip (v, m) =
+  let ub : bits('n) = ((zeros('n) + 1) << m) - 1 in
+  let lb : bits('n) = not_vec (ub) in
+  if v <_s lb then { pext_write_OV (0b1); lb }
+  else if ub <_s v then { pext_write_OV (0b1); ub }
+  else v
 
 
 /* *****************************************************************/
@@ -211,14 +217,6 @@ mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KSLRA16) <->
   0b0101011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, KSLRA16_U) <->
   0b0110011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, PKBB16) <->
-  0b0000111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, PKBT16) <->
-  0b0001111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, PKTT16) <->
-  0b0010111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, PKTB16) <->
-  0b0011111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SCMPLE16) <->
   0b0001110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, SCMPLT16) <->
@@ -254,50 +252,50 @@ function clause execute (PEXT_ALU16(rs2, rs1, rd, op)) = {
   let sa5 : byte = EXTS(X(rs2)[4..0]);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 16) by 16) {
-    let rs1_word =  slice (rs1_val, i, 16);
-    let rs2_word =  slice (rs2_val, i, 16);
+    let rs1_16 =  slice (rs1_val, i, 16);
+    let rs2_16 =  slice (rs2_val, i, 16);
     result[(i+15)..i] = match op {
-      ADD16    => rs1_word + rs2_word,
-      RADD16   => radd(rs1_word,rs2_word),
-      URADD16  => uradd(rs1_word,rs2_word),
-      KADD16   => kadd(rs1_word,rs2_word), 
-      UKADD16  => ukadd(rs1_word,rs2_word),
-      SUB16    => rs1_word - rs2_word,
-      RSUB16   => rsub(rs1_word,rs2_word),
-      URSUB16  => ursub(rs1_word,rs2_word),
-      KSUB16   => ksub(rs1_word,rs2_word),
-      UKSUB16  => uksub(rs1_word,rs2_word),
-      SLL16    => shift_left_logic(rs1_word, sa4),
-      KSLL16   => kshift_left_logic(rs1_word, sa4),
-      KSLRA16  => kslra(rs1_word, sa5),
-      KSLRA16_U=> kslra_u(rs1_word, sa5),
-      SRA16    => shift_right_arith(rs1_word, sa4),
-      SRA16_U  => shift_right_arith_u(rs1_word, sa4),
-      SRL16    => shift_right_logic(rs1_word, sa4),
-      SRL16_U  => shift_right_logic_u(rs1_word, sa4),
-      CMPEQ16  => if   rs1_word == rs2_word 
+      ADD16    => rs1_16 + rs2_16,
+      RADD16   => radd(rs1_16,rs2_16),
+      URADD16  => uradd(rs1_16,rs2_16),
+      KADD16   => kadd(rs1_16,rs2_16), 
+      UKADD16  => ukadd(rs1_16,rs2_16),
+      SUB16    => rs1_16 - rs2_16,
+      RSUB16   => rsub(rs1_16,rs2_16),
+      URSUB16  => ursub(rs1_16,rs2_16),
+      KSUB16   => ksub(rs1_16,rs2_16),
+      UKSUB16  => uksub(rs1_16,rs2_16),
+      SLL16    => shift_left_logic(rs1_16, sa4),
+      KSLL16   => kshift_left_logic(rs1_16, sa4),
+      KSLRA16  => kslra(rs1_16, sa5),
+      KSLRA16_U=> kslra_u(rs1_16, sa5),
+      SRA16    => shift_right_arith(rs1_16, sa4),
+      SRA16_U  => shift_right_arith_u(rs1_16, sa4),
+      SRL16    => shift_right_logic(rs1_16, sa4),
+      SRL16_U  => shift_right_logic_u(rs1_16, sa4),
+      CMPEQ16  => if   rs1_16 == rs2_16 
                   then 0xFFFF 
                   else 0x0000,
-      SCMPLT16 => if signed(rs1_word) < signed(rs2_word)
+      SCMPLT16 => if signed(rs1_16) < signed(rs2_16)
                   then 0xFFFF
                   else 0x0000,
-      SCMPLE16 => if signed(rs1_word) <= signed(rs2_word)
+      SCMPLE16 => if signed(rs1_16) <= signed(rs2_16)
                   then 0xFFFF
                   else 0x0000,
-      UCMPLT16 => if unsigned(rs1_word) < unsigned(rs2_word)
+      UCMPLT16 => if unsigned(rs1_16) < unsigned(rs2_16)
                   then 0xFFFF
                   else 0x0000,
-      UCMPLE16 => if unsigned(rs1_word) <= unsigned(rs2_word)
+      UCMPLE16 => if unsigned(rs1_16) <= unsigned(rs2_16)
                   then 0xFFFF
                   else 0x0000,
-      SMAX16   => if rs2_word <_s rs1_word then rs1_word
-                  else rs2_word,
-      SMIN16   => if rs1_word <_s rs2_word then rs1_word
-                  else rs2_word,
-      UMAX16   => if rs2_word <_u rs1_word then rs1_word
-                  else rs2_word,
-      UMIN16   => if rs1_word <_u rs2_word then rs1_word
-                  else rs2_word
+      SMAX16   => if rs2_16 <_s rs1_16 then rs1_16
+                  else rs2_16,
+      SMIN16   => if rs1_16 <_s rs2_16 then rs1_16
+                  else rs2_16,
+      UMAX16   => if rs2_16 <_u rs1_16 then rs1_16
+                  else rs2_16,
+      UMIN16   => if rs1_16 <_u rs2_16 then rs1_16
+                  else rs2_16
     };
   };
   X(rd) = result;
@@ -572,18 +570,18 @@ function clause execute (P_INST_IMM4_RS1_RD(imm4, rs1, rd, op)) = {
   let sa : byte = EXTZ(imm4);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 16) by 16) {
-    let rs1_word =  slice (rs1_val, i, 16);
+    let rs1_16 =  slice (rs1_val, i, 16);
     
 
     result[(i+15)..i] = match op {
-      KSLLI16    =>  kshift_left_logic(rs1_word, sa),
-      SCLIP16    =>  kshift_left_logic(rs1_word, sa),
-      SLLI16    =>  shift_left_logic(rs1_word, sa),
-      SRAI16    =>  shift_right_arith(rs1_word, sa),
-      SRAI16_U    =>  shift_right_arith_u(rs1_word, sa),
-      SRLI16    =>  shift_right_logic(rs1_word, sa),
-      SRLI16_U    =>  shift_right_logic_u(rs1_word, sa),
-      UCLIP16    =>  uclip(rs1_word, sa)
+      KSLLI16    =>  kshift_left_logic(rs1_16, sa),
+      SCLIP16    =>  sclip(rs1_16, sa),
+      SLLI16    =>  shift_left_logic(rs1_16, sa),
+      SRAI16    =>  shift_right_arith(rs1_16, sa),
+      SRAI16_U    =>  shift_right_arith_u(rs1_16, sa),
+      SRLI16    =>  shift_right_logic(rs1_16, sa),
+      SRLI16_U    =>  shift_right_logic_u(rs1_16, sa),
+      UCLIP16    =>  uclip(rs1_16, sa)
     };
   };
   X(rd) = result;
