@@ -34,6 +34,7 @@ function sshm (v1, v2)=
   rshift[15..0]
   else { pext_write_OV (0b1); 0x7FFF;}
 
+
 /*
 2.5.1. Q15 saturation instructions
 */
@@ -149,7 +150,7 @@ function clause execute (PEXT_Q31(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
   let rd_val  = X(rd);
-  result : xlenbits = zeros();
+  result : bits(32) = zeros();
   result = match op {
       KADDW     => kadd(slice(rs1_val,0,32), slice(rs2_val,0,32)),
       UKADDW    => ukadd(slice(rs1_val,0,32), slice(rs2_val,0,32)),
@@ -289,7 +290,7 @@ function clause execute (PEXT_32_PAIR_RD_COMPUTE(rs2, rs1, rd, op)) = {
   let rs2_val = X(rs2);
   let rs1_32  = slice(rs1_val, 0, 32);
   let rs2_32  = slice(rs2_val, 0, 32);
-  result : bits(64) = zeros();  
+  result : bits(64) = zeros(); 
   result = match op {
           MULR64  => umul33_64(EXTZ(rs1_32), EXTZ(rs2_32)),
           MULSR64 => mul32_64(rs1_32, rs2_32)
@@ -316,11 +317,19 @@ mapping clause assembly = PEXT_32_PAIR_RD_COMPUTE(rs2, rs1, rd, p_inst)
   <-> p_32_pair_compute_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
 
+/* 
+2.5.4. Overflow/Saturation status manipulation instructions
+*/
+
+/* where is subextension Zpsfoperand configured? */
+/* vxsat register */
+
+
 /*
 2.5.5. Miscellaneous Instructions
 SRAI BITREVI WEXTI write in imm5u
 BPICK
-INSB write in imm3u
+INSB
 */
 
 val bitrev32 :
@@ -381,12 +390,13 @@ function clause execute (PEXT_NONSIMD_MISC(rs2, rs1, rd, op)) = {
           AVE     => { let tmp : bits(xlen + 1) = EXTS(rs1_val) + EXTS(rs2_val) + EXTS(0x1); tmp[64..1] },
           SRA_U   => { let sa  : bits(8)  = EXTZ(X(rs2)[5..0]) ; shift_right_arith_u (rs1_val, sa)},
           BITREV  => { let msb : bits(8) = EXTZ(rs2_val[5..0]) ; shift_right_logic(bitrev64(rs1_val), 0x3F - msb)},
-          MADDR32 =>  EXTS(X(rd) + smul(rs1_val, rs2_val)[31..0]),
-          MSUBR32 =>  EXTS(X(rd) - smul(rs1_val, rs2_val)[31..0])
+          MADDR32 =>  EXTS(slice(X(rd),0,32) + smul(slice(rs1_val, 0, 32), slice(rs2_val, 0, 32))[31..0]),
+          MSUBR32 =>  EXTS(slice(X(rd),0,32) - smul(slice(rs1_val, 0, 32), slice(rs2_val, 0, 32))[31..0])
        }
    };
    X(rd) = result;
    RETIRE_SUCCESS
+}
 
 /*32
           WEXT    => { let rs10 = (rs1 >> 1) << 1 ; let rs11 = rs10 + 1 ;
@@ -397,9 +407,6 @@ function clause execute (PEXT_NONSIMD_MISC(rs2, rs1, rd, op)) = {
 
 */
 
-    
-}
-
 mapping p_nonsimd_misc_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     AVE     <-> "AVE ",
     SRA_U    <-> "SRA_U ",
@@ -408,5 +415,44 @@ mapping p_nonsimd_misc_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     MSUBR32    <-> "MSUBR32 "
 }
 
+
+
 mapping clause assembly = PEXT_NONSIMD_MISC(rs2, rs1, rd, p_inst)
   <-> p_32_pair_compute_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+
+
+
+val insb :
+  (byte, byte, bits(64)) -> bits(64)
+function insb (vbyte, vbpos, vrd) = {
+  let insbyte : bits(64) = (0x00000000000000 @ vbyte) << (vbpos << 3) ;
+  let mask : bits(64) = not_vec((0x00000000000000FF) << (vbpos << 3)) ;
+  (vrd & mask) + insbyte
+}
+
+union clause ast = PEXT_INSB : (bits(3), regidx, regidx, p_inst_imm3_rs1_rd_op)
+
+mapping clause encdec = PEXT_INSB(imm3, rs1, rd, INSB) <->
+  0b1010110 @ 0b00 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (PEXT_INSB(imm3, rs1, rd, INSB)) = {
+  let bpos : bits(8) = EXTZ(imm3) in
+  let rs1_val : xlenbits = X(rs1);
+  let rd_val : xlenbits = X(rd);
+  result : xlenbits = zeros();
+  let insbyte : bits(64) = (0x00000000000000 @ slice(rs1_val, 0 ,8) ) << (bpos << 3) ;
+  let mask : bits(64) = not_vec((0x00000000000000FF) << (bpos << 3)) ;
+
+  if sizeof(xlen) == 32
+  then {
+    result = (( (0x00000000 @ rd_val) & mask) + insbyte )[31..0]  ;
+  } else {
+    result = (( rd_val  & mask) + insbyte );
+  };
+   X(rd) = result;
+   RETIRE_SUCCESS
+}
+
+mapping clause assembly = PEXT_INSB(imm3, rs1, rd, INSB)
+  <-> "INSB" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_3(imm3)
+
