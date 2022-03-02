@@ -490,7 +490,35 @@ mapping clause assembly = PEXT_SMAL(rs2, rs1, rd)
 2.3.6. Miscellaneous Instructions
 
 */
+union clause ast = PEXT_MISCELLANEOUS : (bits(5), regidx, regidx, p_inst_imm5_rs1_rd_op)
 
+mapping clause encdec = PEXT_MISCELLANEOUS(imm5, rs1, rd, SCLIP32) <->
+  0b1110010 @ imm5 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_MISCELLANEOUS(imm5, rs1, rd, UCLIP32) <->
+  0b1111010 @ imm5 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (PEXT_MISCELLANEOUS(imm5, rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  let u_imm5 : byte = EXTZ(imm5);
+  result : bits(64) = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
+    let rs1_word = slice(rs1_val, i, 32);
+    result[(i+31)..i] = match op {
+      SCLIP32   =>  sclip(rs1_word, u_imm5),
+      UCLIP32   =>  uclip(rs1_word, u_imm5)
+    };
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+}
+
+mapping p_miscellaneous_mapping : p_inst_imm5_rs1_rd_op <-> string = {
+  SCLIP32  <->  "SCLIP32",
+  UCLIP32  <->  "UCLIP32"
+}
+
+mapping clause assembly = PEXT_MISCELLANEOUS(imm5, rs1, rd, p_inst)
+  <-> p_miscellaneous_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_5(imm5)
 
 /*
 2.3.7. 8-bit Multiply with 32-bit Add Instructions

@@ -149,7 +149,7 @@ function clause execute (PEXT_Q31(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
   let rd_val  = X(rd);
-  result : xlenbits = zeros();
+  result : bits(32) = zeros();
   result = match op {
       KADDW     => kadd(slice(rs1_val,0,32), slice(rs2_val,0,32)),
       UKADDW    => ukadd(slice(rs1_val,0,32), slice(rs2_val,0,32)),
@@ -346,6 +346,41 @@ function bitrev64 (v) = {
   ((tmp[127..64] & 0x00000000FFFFFFFF) | (tmp[63..0]  & 0xFFFFFFFF00000000))
 }
 
+/* wexti */
+union clause ast = PEXT_WEXTI : (bits(5), regidx, regidx)
+
+mapping clause encdec = PEXT_WEXTI(imm5, rs1, rd) <->
+  0b1101111 @ imm5 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute(PEXT_WEXTI(imm5, rs1, rd)) = {
+  X(rd) = 
+  if sizeof(xlen) == 32
+  then  shift_right_logic( X(rs1 | 0b00001) @ X(rs1 & 0b11110), EXTZ(imm5))[31..0]
+  else  shift_right_logic( X(rs1), EXTZ(imm5));
+  RETIRE_SUCCESS
+}
+
+mapping clause assembly = PEXT_WEXTI(imm5, rs1, rd)
+  <-> "WEXTI" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_5(imm5)
+
+/* wext */
+union clause ast = PEXT_WEXT : (regidx, regidx, regidx)
+
+mapping clause encdec = PEXT_WEXT(rs2, rs1, rd) <->
+  0b1100111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute(PEXT_WEXT(rs2, rs1, rd)) = {
+  X(rd) = 
+  if sizeof(xlen) == 32
+  then  shift_right_logic( X(rs1 | 0b00001) @ X(rs1 & 0b11110), EXTZ(X(rs2)[4..0]))[31..0]
+  else  shift_right_logic( X(rs1), EXTZ(X(rs2)[4..0]));
+  RETIRE_SUCCESS
+}
+
+mapping clause assembly = PEXT_WEXT(rs2, rs1, rd)
+  <-> "WEXT" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+
+
 union clause ast = PEXT_NONSIMD_MISC : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, AVE) <->
@@ -354,8 +389,6 @@ mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, SRA_U) <->
   0b0010010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, BITREV) <->
   0b1110011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, WEXT) <->
-  0b1100111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, MADDR32) <->
   0b1100010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, MSUBR32) <->
@@ -364,6 +397,10 @@ mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, MSUBR32) <->
 function clause execute (PEXT_NONSIMD_MISC(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
+  let rd_val = X(rd);
+  let rs1_word0 = slice(rs1_val, 0, 32);
+  let rs2_word0 = slice(rs2_val, 0, 32);
+  let rd_word0 = slice(rd_val, 0, 32);
   result : xlenbits = zeros();  
 
   if sizeof(xlen) == 32
@@ -372,8 +409,8 @@ function clause execute (PEXT_NONSIMD_MISC(rs2, rs1, rd, op)) = {
           AVE     => { let tmp : bits(xlen + 1) = EXTS(rs1_val) + EXTS(rs2_val) + EXTS(0x1); tmp[32..1] },
           SRA_U   => { let sa : bits(8)  = EXTZ(X(rs2)[4..0]) ; shift_right_arith_u (rs1_val, sa)},
           BITREV  => { let msb : bits(8) = EXTZ(rs2_val[4..0]) ; shift_right_logic(bitrev32(rs1_val), 0x1F - msb)},
-          MADDR32 =>  X(rd) + smul(rs1_val, rs2_val)[31..0],
-          MSUBR32 =>  X(rd) - smul(rs1_val, rs2_val)[31..0]
+          MADDR32 =>  X(rd) + smul(rs1_word0, rs2_word0)[31..0],
+          MSUBR32 =>  X(rd) - smul(rs1_word0, rs2_word0)[31..0]
         };
     }
    else {
@@ -381,23 +418,12 @@ function clause execute (PEXT_NONSIMD_MISC(rs2, rs1, rd, op)) = {
           AVE     => { let tmp : bits(xlen + 1) = EXTS(rs1_val) + EXTS(rs2_val) + EXTS(0x1); tmp[64..1] },
           SRA_U   => { let sa  : bits(8)  = EXTZ(X(rs2)[5..0]) ; shift_right_arith_u (rs1_val, sa)},
           BITREV  => { let msb : bits(8) = EXTZ(rs2_val[5..0]) ; shift_right_logic(bitrev64(rs1_val), 0x3F - msb)},
-          MADDR32 =>  EXTS(X(rd) + smul(rs1_val, rs2_val)[31..0]),
-          MSUBR32 =>  EXTS(X(rd) - smul(rs1_val, rs2_val)[31..0])
+          MADDR32 =>  EXTS(rd_word0 + smul(rs1_word0, rs2_word0)[31..0]),
+          MSUBR32 =>  EXTS(rd_word0 - smul(rs1_word0, rs2_word0)[31..0])
        }
    };
    X(rd) = result;
-   RETIRE_SUCCESS
-
-/*32
-          WEXT    => { let rs10 = (rs1 >> 1) << 1 ; let rs11 = rs10 + 1 ;
-                                 let lsb : byte = EXTZ(rB(rs2, 0)[4..0]); EXTS(shift_right_logic(rs1_val, lsb)[31..0]) } ,
-
-  64
-          WEXT    => { let lsb : byte = EXTZ(rB(rs2, 0)[4..0]); EXTS(shift_right_logic(rs1_val, lsb)[31..0]) } ,
-
-*/
-
-    
+   RETIRE_SUCCESS    
 }
 
 mapping p_nonsimd_misc_mapping : p_inst_rs2_rs1_rd_op <-> string = {
@@ -410,3 +436,34 @@ mapping p_nonsimd_misc_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 
 mapping clause assembly = PEXT_NONSIMD_MISC(rs2, rs1, rd, p_inst)
   <-> p_32_pair_compute_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+
+/* non SIMD imm6 */
+union clause ast = PEXT_INST_IMM6_RS1_RD : (bits(6), regidx, regidx, p_inst_imm6_rs1_rd_op)
+
+mapping clause encdec = PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, BITREVI) <->
+  0b111010 @ imm6 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, SRAI_U) <->
+  0b110101 @ imm6 @ rs1 @ 0b001 @ rd @ 0b1110111
+
+function clause execute (PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  X(rd) = 
+  if sizeof(xlen) == 32
+  then match op {
+    BITREVI   =>   bitrev32(rs1_val),
+    SRAI_U    =>   shift_right_arith_u(rs1_val, EXTZ(imm6[4..0]))
+  }
+  else match op {
+    BITREVI   =>   bitrev64(rs1_val),
+    SRAI_U    =>   shift_right_arith_u(rs1_val, EXTZ(imm6))
+  };
+  RETIRE_SUCCESS
+}
+
+mapping p_imm6_mapping : p_inst_imm6_rs1_rd_op <-> string = {
+  BITREVI   <->   "BITREVI",
+  SRAI_U    <->   "SRAI_U"
+}
+
+mapping clause assembly = PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, p_inst)
+  <-> p_imm6_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_6(imm6)

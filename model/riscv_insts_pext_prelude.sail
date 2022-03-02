@@ -255,28 +255,28 @@ function ucmplt (v, m) =
   else zeros('n)
 
 /* misc auxiliary functions */
-val smax : forall 'n, 'n == 8 | 'n == 16.
+val smax : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n), bits('n)) -> bits('n) effect {rreg, wreg}
 function smax (v, m) =
   if signed(v) < signed(m)
   then m
   else v
 
-val smin : forall 'n, 'n == 8 | 'n == 16.
+val smin : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n), bits('n)) -> bits('n) effect {rreg, wreg}
 function smin (v, m) =
   if signed(v) < signed(m)
   then v
   else m
 
-val umax : forall 'n, 'n == 8 | 'n == 16.
+val umax : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n), bits('n)) -> bits('n) effect {rreg, wreg}
 function umax (v, m) =
   if unsigned(v) < unsigned(m)
   then m
   else v
 
-val umin : forall 'n, 'n == 8 | 'n == 16.
+val umin : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n), bits('n)) -> bits('n) effect {rreg, wreg}
 function umin (v, m) =
   if unsigned(v) < unsigned(m)
