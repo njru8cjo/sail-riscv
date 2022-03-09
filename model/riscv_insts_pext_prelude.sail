@@ -69,15 +69,15 @@ mapping pext_width_mnemonic : word_width <-> string = {
 val radd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function radd (v1, v2) =
-  let v1ext : bits(64) = EXTS(v1) in
-  let v2ext : bits(64) = EXTS(v2) in
+  let v1ext : bits(66) = EXTS(v1) in
+  let v2ext : bits(66) = EXTS(v2) in
   slice ((v1ext + v2ext) >> 1, 0, 'n)
 
 val uradd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function uradd (v1, v2) =
-  let v1ext : bits(64) = EXTZ(v1) in
-  let v2ext : bits(64) = EXTZ(v2) in
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
   slice ((v1ext + v2ext) >> 1, 0, 'n)
 
 val kadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
@@ -106,15 +106,15 @@ function ukadd (v1, v2) =
 val rsub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function rsub (v1, v2) =
-  let v1ext : bits(64) = EXTS(v1) in
-  let v2ext : bits(64) = EXTS(v2) in
+  let v1ext : bits(66) = EXTS(v1) in
+  let v2ext : bits(66) = EXTS(v2) in
   slice ((v1ext - v2ext) >> 1, 0, 'n)
 
 val ursub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function ursub (v1, v2) =
-  let v1ext : bits(64) = EXTZ(v1) in
-  let v2ext : bits(64) = EXTZ(v2) in
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
   slice ((v1ext - v2ext) >> 1, 0, 'n)
 
 val ksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
@@ -133,9 +133,9 @@ function ksub (v1, v2) =
 val uksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function uksub (v1, v2) =
-  let ub : bits(66) = EXTZ(sail_ones ('n)) in
-  let v1ext : bits(66) = EXTZ(v1) in
-  let v2ext : bits(66) = EXTZ(v2) in
+  let ub : bits(65) = EXTZ(sail_ones ('n)) in
+  let v1ext : bits(65) = EXTZ(v1) in
+  let v2ext : bits(65) = EXTZ(v2) in
   let diffext = v1ext - v2ext in
   if ub <_u diffext then { pext_write_OV (0b1); zeros('n) }
   else { slice (diffext, 0, 'n) }

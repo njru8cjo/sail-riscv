@@ -102,28 +102,39 @@ function clause execute (PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, 
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
   result : bits(64) = zeros();
-  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
-    let rs1_word = slice(rs1_val, i, 32);
-    let rs2_word = slice(rs2_val, i, 32);
-    match op {
-      SMAR64   =>  { result = result + smul(rs1_word, rs2_word); },
-      SMSR64   =>  { result = result - smul(rs1_word, rs2_word); },
-      UMAR64   =>  { result = result + umul(rs1_word, rs2_word); },
-      UMSR64   =>  { result = result - umul(rs1_word, rs2_word); },
-      KMAR64   =>  { result = kadd(result, smul(rs1_word, rs2_word)); },
-      KMSR64   =>  { result = ksub(result, smul(rs1_word, rs2_word)); },
-      UKMAR64  =>  { result = ukadd(result, umul(rs1_word, rs2_word)); },
-      UKMSR64  =>  { result = uksub(result, umul(rs1_word, rs2_word)); }
-    };
-  };
   if sizeof(xlen) == 32
   then {
-    result = result + X(rd | 0b00001) @ X(rd & 0b11110);
+      let rs1_word = slice(rs1_val, 0, 32);
+      let rs2_word = slice(rs2_val, 0, 32);
+      result = match op {
+      SMAR64   => (X(rd | 0b00001) @ X(rd & 0b11110)) + smul(rs1_word, rs2_word),
+      SMSR64   => (X(rd | 0b00001) @ X(rd & 0b11110)) - smul(rs1_word, rs2_word),
+      UMAR64   => (X(rd | 0b00001) @ X(rd & 0b11110)) + umul(rs1_word, rs2_word),
+      UMSR64   => (X(rd | 0b00001) @ X(rd & 0b11110)) - umul(rs1_word, rs2_word),
+      KMAR64   => kadd((X(rd | 0b00001) @ X(rd & 0b11110)), smul(rs1_word, rs2_word)),
+      KMSR64   => ksub((X(rd | 0b00001) @ X(rd & 0b11110)), smul(rs1_word, rs2_word)),
+      UKMAR64  => ukadd((X(rd | 0b00001) @ X(rd & 0b11110)), umul(rs1_word, rs2_word)),
+      UKMSR64  => uksub((X(rd | 0b00001) @ X(rd & 0b11110)), umul(rs1_word, rs2_word))
+    };
     X(rd | 0b00001) = result[63..32];
     X(rd & 0b11110) = result[31..0];
   }
   else {
-    X(rd) = X(rd) + result;
+      let rs1_word_B = slice(rs1_val, 0, 32);
+      let rs2_word_B = slice(rs2_val, 0, 32);
+      let rs1_word_T = slice(rs1_val, 32, 32);
+      let rs2_word_T = slice(rs2_val, 32, 32);
+      result = match op {
+      SMAR64   => X(rd) + ( smul(rs1_word_B, rs2_word_B) + smul(rs1_word_T, rs2_word_T) ),
+      SMSR64   => X(rd) - ( smul(rs1_word_B, rs2_word_B) + smul(rs1_word_T, rs2_word_T) ),
+      UMAR64   => X(rd) + ( umul(rs1_word_B, rs2_word_B) + umul(rs1_word_T, rs2_word_T) ),
+      UMSR64   => X(rd) - ( umul(rs1_word_B, rs2_word_B) + umul(rs1_word_T, rs2_word_T) ),
+      KMAR64   => kadd(X(rd), (smul(rs1_word_B, rs2_word_B) + smul(rs1_word_T, rs2_word_T) )),
+      KMSR64   => ksub(X(rd), (smul(rs1_word_B, rs2_word_B) + smul(rs1_word_T, rs2_word_T) )),
+      UKMAR64  => ukadd(X(rd), (umul(rs1_word_B, rs2_word_B) + umul(rs1_word_T, rs2_word_T) )),
+      UKMSR64  => uksub(X(rd), (umul(rs1_word_B, rs2_word_B) + umul(rs1_word_T, rs2_word_T) ))
+    };
+    X(rd) = result;
   };
   RETIRE_SUCCESS
 }
@@ -166,7 +177,7 @@ function clause execute (PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, op)) 
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
   result : bits(64) = zeros();
-  foreach (i from 0 to sizeof(xlen) by 32) {
+  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
     let rs1_half_top = slice(rs1_val, i+16, 16);
     let rs1_half_bottom = slice(rs1_val, i, 16);
     let rs2_half_top = slice(rs2_val, i+16, 16);
@@ -186,7 +197,7 @@ function clause execute (PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, op)) 
   };
   if sizeof(xlen) == 32
   then {
-    result = result + X(rd | 0b00001) @ X(rd & 0b11110);
+    result = result + (X(rd | 0b00001) @ X(rd & 0b11110));
     X(rd | 0b00001) = result[63..32];
     X(rd & 0b11110) = result[31..0];
   }
@@ -195,7 +206,39 @@ function clause execute (PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, op)) 
   };
   RETIRE_SUCCESS
 }
-
+/*
+function clause execute (PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  let rs2_val = X(rs2);
+  result : bits(64) = zeros();
+    let rs1_half_top = slice(rs1_val, 16, 16);
+    let rs1_half_bottom = slice(rs1_val, 0, 16);
+    let rs2_half_top = slice(rs2_val, 16, 16);
+    let rs2_half_bottom = slice(rs2_val, 0, 16);
+  result =  match op {
+      SMALBB   =>   EXTS(smul(rs1_half_bottom, rs2_half_bottom)),
+      SMALBT   =>   EXTS(smul(rs1_half_bottom, rs2_half_top)),
+      SMALTT   =>   EXTS(smul(rs1_half_top, rs2_half_top)),
+      SMALDA   =>   EXTS(smul(rs1_half_top, rs2_half_top)) + EXTS(smul(rs1_half_bottom, rs2_half_bottom)),
+      SMALXDA  =>   EXTS(smul(rs1_half_top, rs2_half_bottom)) + EXTS(smul(rs1_half_bottom, rs2_half_top)),
+      SMALDS   =>   EXTS(smul(rs1_half_top, rs2_half_top)) - EXTS(smul(rs1_half_bottom, rs2_half_bottom)),
+      SMALDRS  =>   EXTS(smul(rs1_half_bottom, rs2_half_bottom)) - EXTS(smul(rs1_half_top, rs2_half_top)),
+      SMALXDS  =>   EXTS(smul(rs1_half_top, rs2_half_bottom)) - EXTS(smul(rs1_half_bottom, rs2_half_top)),
+      SMSLDA   =>   EXTS(smul(rs1_half_top, rs2_half_top)) - EXTS(smul(rs1_half_bottom, rs2_half_bottom)),
+      SMSLXDA  =>   EXTS(smul(rs1_half_top, rs2_half_bottom)) - EXTS(smul(rs1_half_bottom, rs2_half_top))
+    };
+  if sizeof(xlen) == 32
+  then {
+    result = result + (X(rd | 0b00001) @ X(rd & 0b11110));
+    X(rd | 0b00001) = result[63..32];
+    X(rd & 0b11110) = result[31..0];
+  }
+  else {
+    X(rd) = X(rd) + result;
+  };
+  RETIRE_SUCCESS
+}
+*/
 mapping p_16bits_mul_64bits_add_sub_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     SMALBB   <-> "SMALBB",
     SMALBT   <-> "SMALBT",

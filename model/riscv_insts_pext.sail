@@ -64,8 +64,10 @@ mapping clause encdec = PEXT_ALU16(rs2, rs1, rd, UMIN16) <->
 function clause execute (PEXT_ALU16(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
+  /*
   let sa4 : byte = 0x0 @ X(rs2)[3..0];
   let sa5 : byte = EXTS(X(rs2)[4..0]);
+  */
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 16) by 16) {
     let rs1_16 =  slice (rs1_val, i, 16);
@@ -81,14 +83,14 @@ function clause execute (PEXT_ALU16(rs2, rs1, rd, op)) = {
       URSUB16  => ursub(rs1_16,rs2_16),
       KSUB16   => ksub(rs1_16,rs2_16),
       UKSUB16  => uksub(rs1_16,rs2_16),
-      SLL16    => shift_left_logic(rs1_16, sa4),
-      KSLL16   => kshift_left_logic(rs1_16, sa4),
-      KSLRA16  => kslra(rs1_16, sa5),
-      KSLRA16_U=> kslra_u(rs1_16, sa5),
-      SRA16    => shift_right_arith(rs1_16, sa4),
-      SRA16_U  => shift_right_arith_u(rs1_16, sa4),
-      SRL16    => shift_right_logic(rs1_16, sa4),
-      SRL16_U  => shift_right_logic_u(rs1_16, sa4),
+      SLL16    => shift_left_logic(rs1_16, 0x0 @ X(rs2)[3..0]),
+      KSLL16   => kshift_left_logic(rs1_16, 0x0 @ X(rs2)[3..0]),
+      KSLRA16  => kslra(rs1_16, EXTS(X(rs2)[4..0])),
+      KSLRA16_U=> kslra_u(rs1_16, EXTS(X(rs2)[4..0])),
+      SRA16    => shift_right_arith(rs1_16, 0x0 @ X(rs2)[3..0]),
+      SRA16_U  => shift_right_arith_u(rs1_16, 0x0 @ X(rs2)[3..0]),
+      SRL16    => shift_right_logic(rs1_16, 0x0 @ X(rs2)[3..0]),
+      SRL16_U  => shift_right_logic_u(rs1_16, 0x0 @ X(rs2)[3..0]),
       CMPEQ16  => if   rs1_16 == rs2_16 
                   then 0xFFFF 
                   else 0x0000,
@@ -410,3 +412,60 @@ mapping p_inst_imm4_rs1_rd_mapping : p_inst_imm4_rs1_rd_op <-> string = {
 
 mapping clause assembly = P_INST_IMM4_RS1_RD(imm4, rs1, rd, p_inst)
   <-> p_inst_imm4_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_4(imm4)
+
+
+
+/* 16bits one register instructions */
+union clause ast = P_INST_RS1_RD_16 : (regidx, regidx, p_inst_rs1_rd_op)
+
+mapping clause encdec = P_INST_RS1_RD_16(rs1, rd, CLRS16) <->
+  0b1010111 @ 0b01000 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_RS1_RD_16(rs1, rd, CLO16) <->
+  0b1010111 @ 0b01011 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_RS1_RD_16(rs1, rd, CLZ16) <->
+  0b1010111 @ 0b01001 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = P_INST_RS1_RD_16(rs1, rd, KABS16) <->
+  0b1010110 @ 0b10001 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (P_INST_RS1_RD_16(rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  result : xlenbits = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 16) by 16) {
+    let rs1_byte = slice(rs1_val, i, 16);
+    result[(i+15)..i] = match op {
+      CLRS16    => clrs(rs1_byte),
+      CLO16     => clo(rs1_byte),
+      CLZ16     => clz(rs1_byte),
+      KABS16    => kabs(rs1_byte)
+    };
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+}
+
+mapping p_inst_rs1_rd_16_mapping : p_inst_rs1_rd_op <-> string = {
+  CLRS16 <-> "CLRS16",
+  CLO16  <-> "CLO16",
+  CLZ16  <-> "CLZ16",
+  KABS16 <-> "KABS16"
+}
+
+mapping clause assembly = P_INST_RS1_RD_16(rs1, rd, p_inst)
+  <-> p_inst_rs1_rd_16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
+
+   
+  /* No implementation*/
+  /* clrs32 clz32 CLO32 kabsw kslliw pbsad pbsada smax smin umax umin 8 smslda smslxda*/
+  /*ME clrs32*/
+  
+  /* 64 bit error*/
+  /* smaqa smaqa.su umaqa kmar64 kmsr64 kslra8 kslra8.u rsub64 smalbb smalbt ukmar64 ukmsr64 umaqa uradd64 ursub64*/
+   
+  /*  ukmar64 ukmsr64 uradd64 ursub64 rsub64 radd64 kslra8 kslar8.u kmsr64 kmar64 smalbb bt da drs tt xda xds  */
+
+  /* ME umaqa smaqa*/
+  /* 32 bit error  (FIX)*/
+  /* kmar64 kslra8 kslra8.u ukmar64 ukmsr64 uradd64 ursub64 rsub64 radd64 */
+  /**/
+
+

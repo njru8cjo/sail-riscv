@@ -207,13 +207,19 @@ function clause execute (PEXT_SHIFT8(rs2, rs1, rd, op)) = {
       SRL8_U   => shift_right_logic_u(rs1_byte, EXTZ(rs2_val[2..0])),
       SLL8     => shift_left_logic(rs1_byte, EXTZ(rs2_val[2..0])),
       KSLL8     => kshift_left_logic(rs1_byte, EXTZ(rs2_val[2..0])),
-      KSLRA8     => shift_right_arith(rs1_byte, EXTS(rs2_val[3..0])),
-      KSLRA8_U   => shift_right_arith_u(rs1_byte, EXTS(rs2_val[3..0]))
+      KSLRA8     => kslra(rs1_byte, EXTS(rs2_val[3..0])),
+      KSLRA8_U   => kslra_u(rs1_byte, EXTS(rs2_val[3..0]))
+
     };
   };
   X(rd) = result;
   RETIRE_SUCCESS
 }
+
+/*
+      KSLRA8     => shift_right_arith(rs1_byte, EXTS(rs2_val[3..0])),
+      KSLRA8_U   => shift_right_arith_u(rs1_byte, EXTS(rs2_val[3..0]))
+*/
 
 mapping p_SHIFT8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     SRA8   <-> "SRA8",

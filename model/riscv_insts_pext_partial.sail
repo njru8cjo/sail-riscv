@@ -500,12 +500,13 @@ mapping clause encdec = PEXT_MISCELLANEOUS(imm5, rs1, rd, UCLIP32) <->
 function clause execute (PEXT_MISCELLANEOUS(imm5, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let u_imm5 : byte = EXTZ(imm5);
-  result : bits(64) = zeros();
+  result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
     let rs1_word = slice(rs1_val, i, 32);
     result[(i+31)..i] = match op {
       SCLIP32   =>  sclip(rs1_word, u_imm5),
-      UCLIP32   =>  uclip(rs1_word, u_imm5)
+      UCLIP32   =>  uclip(rs1_word, u_imm5),
+      CLRS32    => 
     };
   };
   X(rd) = result;
@@ -553,6 +554,7 @@ function clause execute (PEXT_8_32_MUL_ADD(rs2, rs1, rd, op)) = {
     then {
       let rd_32  =  slice (rd_val, (i + 8 - 32), 32);
       result[(i + 7)..(i - 24)] = rd_32 + tmp_value;
+      tmp_value = zeros();
     }
   };
   X(rd) = result;

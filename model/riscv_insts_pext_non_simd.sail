@@ -244,7 +244,6 @@ function clause execute (PEXT_32_COMPUTE(rs2, rs1, rd, op)) = {
   result = match op {
         MAXW      => if rs1_32 <_s rs2_32 then rs2_32 else rs1_32,
         MINW      => if rs1_32 <_s rs2_32 then rs1_32 else rs2_32,
-        MSUBR32   => sub_bits(slice (X(rd), 0, 32),  mulb(rs1_32, rs2_32)),
         RADDW     => { let res : bits(33) = add_bits(EXTS(rs1_32), EXTS(rs2_32)); slice (res, 1, 32) },
         RSUBW     => { let res : bits(33) = sub_bits(EXTS(rs1_32), EXTS(rs2_32)); slice (res, 1, 32) },
         URADDW    => { let res : bits(33) = add_bits(EXTZ(rs1_32), EXTZ(rs2_32)); slice (res, 1, 32) },
@@ -270,7 +269,6 @@ mapping p_32_compute_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     URSUBW    <-> "URSUBW ",
     MAXW    <-> "MAXW ",
     MINW    <-> "MINW ",
-    MSUBR32   <-> "MSUBR32 "
 }
 
 mapping clause assembly = PEXT_32_COMPUTE(rs2, rs1, rd, p_inst)
@@ -446,7 +444,7 @@ mapping p_nonsimd_misc_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 
 
 mapping clause assembly = PEXT_NONSIMD_MISC(rs2, rs1, rd, p_inst)
-  <-> p_32_pair_compute_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+  <-> p_nonsimd_misc_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
 
 
@@ -464,7 +462,7 @@ mapping clause encdec = PEXT_INSB(imm3, rs1, rd, INSB) <->
   0b1010110 @ 0b00 @ imm3 @ rs1 @ 0b000 @ rd @ 0b1110111
 
 function clause execute (PEXT_INSB(imm3, rs1, rd, INSB)) = {
-  let bpos : bits(8) = EXTZ(imm3) in
+  let bpos : bits(8) = EXTZ(imm3) ;
   let rs1_val : xlenbits = X(rs1);
   let rd_val : xlenbits = X(rd);
   result : xlenbits = zeros();
