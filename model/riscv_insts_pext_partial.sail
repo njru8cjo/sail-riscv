@@ -496,7 +496,8 @@ mapping clause encdec = PEXT_MISCELLANEOUS(imm5, rs1, rd, SCLIP32) <->
   0b1110010 @ imm5 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_MISCELLANEOUS(imm5, rs1, rd, UCLIP32) <->
   0b1111010 @ imm5 @ rs1 @ 0b000 @ rd @ 0b1110111
-
+mapping clause encdec = PEXT_MISCELLANEOUS(imm5, rs1, rd, KSLLIW) <->
+  0b0011011 @ imm5 @ rs1 @ 0b001 @ rd @ 0b1110111
 function clause execute (PEXT_MISCELLANEOUS(imm5, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let u_imm5 : byte = EXTZ(imm5);
@@ -506,7 +507,7 @@ function clause execute (PEXT_MISCELLANEOUS(imm5, rs1, rd, op)) = {
     result[(i+31)..i] = match op {
       SCLIP32   =>  sclip(rs1_word, u_imm5),
       UCLIP32   =>  uclip(rs1_word, u_imm5),
-      CLRS32    => 
+      KSLLIW    =>  kshift_left_logic(rs1_word, u_imm5)
     };
   };
   X(rd) = result;
@@ -515,7 +516,8 @@ function clause execute (PEXT_MISCELLANEOUS(imm5, rs1, rd, op)) = {
 
 mapping p_miscellaneous_mapping : p_inst_imm5_rs1_rd_op <-> string = {
   SCLIP32  <->  "SCLIP32",
-  UCLIP32  <->  "UCLIP32"
+  UCLIP32  <->  "UCLIP32",
+  KSLLIW  <->  "KSLLIW"
 }
 
 mapping clause assembly = PEXT_MISCELLANEOUS(imm5, rs1, rd, p_inst)
