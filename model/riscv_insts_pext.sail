@@ -200,14 +200,6 @@ mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, URSTAS16) <->
   0b1101010 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
 mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, URSTSA16) <->
   0b1101011 @ rs2 @ rs1 @ 0b010 @ rd @ 0b1110111
-mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, PKBB16) <->
-  0b0000111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, PKBT16) <->
-  0b0001111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, PKTT16) <->
-  0b0010111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, PKTB16) <->
-  0b0011111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, KHM16) <->
   0b1000011 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, KHMX16) <->
@@ -245,11 +237,7 @@ function clause execute (PEXT_CROSS_16(rs2, rs1, rd, op)) = {
       KSTSA16  => ksub(rs1_1,rs2_1) @ kadd(rs1_0,rs2_0),
       UKSTSA16 => uksub(rs1_1,rs2_1) @ ukadd(rs1_0,rs2_0),
       KHM16    => khm (rs1_1, rs2_1) @ khm (rs1_0, rs2_0), 
-      KHMX16   => khm (rs1_1, rs2_0) @ khm (rs1_0, rs2_1),
-      PKBB16   => rs1_0 @ rs2_0,
-      PKBT16   => rs1_0 @ rs2_1,
-      PKTB16   => rs1_1 @ rs2_0,
-      PKTT16   => rs1_1 @ rs2_1
+      KHMX16   => khm (rs1_1, rs2_0) @ khm (rs1_0, rs2_1)
     };
   };
   X(rd) = result;
@@ -278,12 +266,7 @@ mapping p_CROSS_16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     KSTSA16  <-> "KSTSA16",
     UKSTSA16 <-> "UKSTSA16",
     KHM16  <-> "KHM16",
-    KHMX16  <-> "KHMX16",
-    PKBB16  <-> "PKBB16",
-    PKBT16 <-> "PKBT16",
-    PKTB16  <-> "PKTB16",
-    PKTT16  <-> "PKTT16"
-
+    KHMX16  <-> "KHMX16"
 }
 
 mapping clause assembly = PEXT_CROSS_16(rs2, rs1, rd, p_inst)

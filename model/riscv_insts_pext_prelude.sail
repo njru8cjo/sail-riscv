@@ -350,3 +350,4 @@ function clo (v) = {
   if vcpl[31..30] == 0b11   then { cnt = cnt + 2;  vcpl = vcpl << 2 };
   if vcpl[31..31] == 0b1    then { cnt = cnt + 1 };
   cnt = cnt + 'n - 32; cnt } }
+  
