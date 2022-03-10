@@ -70,7 +70,11 @@ function clause execute (PEXT_ALU8(rs2, rs1, rd, op)) = {
       SCMPLE8  => scmple(rs1_byte, rs2_byte),
       SCMPLT8  => scmplt(rs1_byte, rs2_byte),
       UCMPLE8  => ucmple(rs1_byte, rs2_byte),
-      UCMPLT8  => ucmplt(rs1_byte, rs2_byte)
+      UCMPLT8  => ucmplt(rs1_byte, rs2_byte),
+      SMIN8    => smin(rs1_byte, rs2_byte),
+      SMAX8    => smax(rs1_byte, rs2_byte),
+      UMIN8    => umin(rs1_byte, rs2_byte),
+      UMAX8    => umax(rs1_byte, rs2_byte)
     };
   };
   X(rd) = result;
@@ -92,7 +96,11 @@ mapping p_ALU8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     SCMPLE8 <-> "SCMPLE8",
     SCMPLT8 <-> "SCMPLT8",
     UCMPLE8 <-> "UCMPLE8",
-    UCMPLT8 <-> "UCMPLT8"
+    UCMPLT8 <-> "UCMPLT8",
+    SMIN8 <-> "SMIN8",
+    SMAX8 <-> "SMAX8",
+    UMIN8 <-> "UMIN8",
+    UMAX8 <-> "UMAX8"
 }
 
 mapping clause assembly = PEXT_ALU8(rs2, rs1, rd, p_inst)
@@ -103,10 +111,6 @@ mapping clause assembly = PEXT_ALU8(rs2, rs1, rd, p_inst)
 /* 8bits mul instruction */
 union clause ast = PEXT_MUL8 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
-mapping clause encdec = PEXT_MUL8(rs2, rs1, rd, KHM8) <->
-  0b1000111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_MUL8(rs2, rs1, rd, KHMX8) <->
-  0b1001111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_MUL8(rs2, rs1, rd, SMUL8) <->
   0b1010100 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_MUL8(rs2, rs1, rd, SMULX8) <->

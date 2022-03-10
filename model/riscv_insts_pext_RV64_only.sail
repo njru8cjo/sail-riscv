@@ -393,7 +393,7 @@ mapping p_64only_kabs32_mapping : p_inst_rs1_rd_op <-> string = {
 }
 
 mapping clause assembly = PEXT_INST_64ONLY_KABS32(rs1, rd, p_inst)
-  <-> p_inst_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
+  <-> p_64only_kabs32_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
 
 /* SIMD 32 bits cross instructions */
 union clause ast = PEXT_INST_32BITS_SIMD_CROSS : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)

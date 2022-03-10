@@ -142,10 +142,6 @@ mapping clause encdec = PEXT_Q31(rs2, rs1, rd, KDMABT) <->
 mapping clause encdec = PEXT_Q31(rs2, rs1, rd, KDMATT) <->
   0b1111001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
-
-
-
-
 function clause execute (PEXT_Q31(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
@@ -197,6 +193,42 @@ mapping clause assembly = PEXT_Q31(rs2, rs1, rd, p_inst)
   <-> p_q31_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
 
+/* KSLLIW */
+
+union clause ast = PEXT_KSLLIW : (bits(5), regidx, regidx)
+
+mapping clause encdec = PEXT_KSLLIW(imm5, rs1, rd) <->
+  0b0011011 @ imm5 @ rs1 @ 0b001 @ rd @ 0b1110111
+
+function clause execute (PEXT_KSLLIW(imm5, rs1, rd)) = {
+  let sa : bits(8) = EXTZ(imm5);
+  let rs1_word = slice(X(rs1), 0, 32);
+  if sizeof(xlen) == 32
+  then X(rd) = kshift_left_logic(rs1_word, sa)
+  else X(rd) = EXTS(kshift_left_logic(rs1_word, sa));
+  RETIRE_SUCCESS
+}
+
+mapping clause assembly = PEXT_KSLLIW(imm5, rs1, rd)
+  <-> "KSLLIW" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_5(imm5)
+
+/* KABSW*/
+union clause ast = PEXT_KABSW : (regidx, regidx)
+
+mapping clause encdec = PEXT_KABSW(rs1, rd) <->
+  0b1010110 @ 0b10100 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (PEXT_KABSW(rs1, rd)) = {
+  let rs1_word = slice(X(rs1), 0, 32);
+  if sizeof(xlen) == 32
+  then X(rd) = kabs(rs1_word)
+  else X(rd) = EXTS(kabs(rs1_word));
+  RETIRE_SUCCESS
+}
+
+mapping clause assembly = PEXT_KABSW(rs1, rd)
+  <-> "KABSW" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
+
 /*
 2.5.3. 32-bit Computation Instructions
 */
@@ -230,8 +262,7 @@ mapping clause encdec = PEXT_32_COMPUTE(rs2, rs1, rd, MAXW) <->
   0b1111001 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_32_COMPUTE(rs2, rs1, rd, MINW) <->
   0b1111000 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_COMPUTE(rs2, rs1, rd, MSUBR32) <->
-  0b1100011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+
 
 
 
@@ -482,7 +513,27 @@ function clause execute (PEXT_INSB(imm3, rs1, rd, INSB)) = {
 mapping clause assembly = PEXT_INSB(imm3, rs1, rd, INSB)
   <-> "INSB" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_3(imm3)
 
-/* non SIMD imm6 */
+/* BPICK */
+union clause ast = PEXT_BPICK : (regidx, regidx, regidx, regidx, p_inst_rs3_rs2_rs1_rd_op)
+
+mapping clause encdec = PEXT_BPICK(rs3, rs2, rs1, rd, BPICK) <->
+  rs3 @ 0b00 @ rs2 @ rs1 @ 0b011 @ rd @ 0b1110111
+
+function clause execute (PEXT_BPICK(rs3, rs2, rs1, rd, BPICK)) = {
+  if sizeof(xlen) == 32
+  then {
+    X(rd) = slice( X(rs1) ,0 ,32) & slice( X(rs3) ,0 ,32)  | slice( X(rs2) ,0 ,32) & not_vec(slice( X(rs3) ,0 ,32));
+  } else {
+    X(rd) = slice(X(rs1) ,0 ,64) & slice( X(rs3) ,0 ,64) | slice( X(rs2) ,0 ,64) & not_vec(slice( X(rs3) ,0 ,64));
+  };
+  RETIRE_SUCCESS;
+}
+
+mapping clause assembly = PEXT_BPICK(rs3, rs2, rs1, rd, BPICK)
+  <-> "BPICK" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2) ^ sep() ^ reg_name(rs3)
+
+
+/* NON_SIMD imm6 */
 union clause ast = PEXT_INST_IMM6_RS1_RD : (bits(6), regidx, regidx, p_inst_imm6_rs1_rd_op)
 
 mapping clause encdec = PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, BITREVI) <->
@@ -518,89 +569,6 @@ mapping clause assembly = PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, p_inst)
 
 
 
-/* 32bits one register instructions */
-
-union clause ast = P_INST_RS1_RD_32 : (regidx, regidx, p_inst_rs1_rd_op)
-
-mapping clause encdec = P_INST_RS1_RD_32(rs1, rd, CLRS32) <->
-  0b1010111 @ 0b11000 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = P_INST_RS1_RD_32(rs1, rd, CLO32) <->
-  0b1010111 @ 0b11011 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = P_INST_RS1_RD_32(rs1, rd, CLZ32) <->
-  0b1010111 @ 0b11001 @ rs1 @ 0b000 @ rd @ 0b1110111
-
-
-function clause execute (P_INST_RS1_RD_32(rs1, rd, op)) = {
-  let rs1_val = X(rs1);
-  result : xlenbits = zeros();
-  
-  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
-    let rs1_word = slice(rs1_val, i, 32);
-    
-    result[(i+31)..i] = match op {
-      CLRS32    => clrs(rs1_word),
-      CLO32     => clo(rs1_word),
-      CLZ32     => clz(rs1_word)
-    };
-    
-  };
-  
-  X(rd) = result;
-  RETIRE_SUCCESS
-}
-
-mapping p_inst_rs1_rd_32_mapping : p_inst_rs1_rd_op <-> string = {
-  CLRS32 <-> "CLRS32",
-  CLO32  <-> "CLO32",
-  CLZ32  <-> "CLZ32"
-}
-
-mapping clause assembly = P_INST_RS1_RD_32(rs1, rd, p_inst)
-  <-> p_inst_rs1_rd_32_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
-
-
-
-
-
-union clause ast = PEXT_PBSAD : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
-
-mapping clause encdec = PEXT_PBSAD(rs2, rs1, rd, PBSAD) <->
-  0b1111110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_PBSAD(rs2, rs1, rd, PBSADA) <->
-  0b1111111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-
-function clause execute (PEXT_PBSAD(rs2, rs1, rd, op)) = {
-  let rs1_val = X(rs1);
-  let rs2_val = X(rs2);
-  result : xlenbits = zeros();
-  foreach (i from 0 to (sizeof(xlen) - 8) by 8) {
-    let rs1_byte = slice(rs1_val, i, 8);
-    let rs2_byte = slice(rs2_val, i, 8);
-    result = { 
-      let v1ext : bits(9) = EXTZ(rs1_byte) ;
-      let v2ext : bits(9) = EXTZ(rs2_byte) ;
-      let pos : xlenbits = EXTS (v1ext - v2ext) ;
-      xlen_zeros : xlenbits = zeros();
-      if pos <_s xlen_zeros then not_vec(pos) + 1 else pos
-    }
-  };
-  result = match op {
-    PBSAD  => result ,
-    PBSADA => X(rd) + result
-  };
-
-  X(rd) = result;
-  RETIRE_SUCCESS
-}
-
-mapping p_inst_pbsad_mapping : p_inst_rs2_rs1_rd_op <-> string = {
-  PBSAD <-> "PBSAD",
-  PBSADA  <-> "PBSADA"
-}
-
-
-mapping clause assembly = PEXT_PBSAD(rs2, rs1, rd, p_inst)
-  <-> p_inst_pbsad_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
 
    

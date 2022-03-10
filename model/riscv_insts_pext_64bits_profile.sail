@@ -172,7 +172,10 @@ mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALDR
   0b1001101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMALXDS) <->
   0b1010101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111 
-
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMSLDA) <->
+  0b1010110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, SMSLXDA) <->
+  0b1011110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 function clause execute (PEXT_INST_16BITS_MUL_64BITS_ADD_SUB(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
