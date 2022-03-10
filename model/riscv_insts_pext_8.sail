@@ -419,3 +419,37 @@ mapping p_inst_swap_unpack_mapping : p_inst_rs1_rd_op <-> string = {
 
 mapping clause assembly = P_INST_SWAP_UNPACK(rs1, rd, p_inst)
   <-> p_inst_swap_unpack_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
+
+/* 8bits KHM and KHMX instructions */
+union clause ast = PEXT_KHM_8 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
+
+mapping clause encdec = PEXT_KHM_8(rs2, rs1, rd, KHM8) <->
+  0b1000111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+mapping clause encdec = PEXT_KHM_8(rs2, rs1, rd, KHMX8) <->
+  0b1001111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
+
+function clause execute (PEXT_KHM_8(rs2 ,rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  let rs2_val = X(rs2);
+  result : xlenbits = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 16) by 16) {
+    let rs1_byte_bottom = slice(rs1_val, i, 8);
+    let rs1_byte_top = slice(rs1_val, i + 8, 8);
+    let rs2_byte_bottom = slice(rs2_val, i, 8);
+    let rs2_byte_top = slice(rs2_val, i + 8, 8);
+    result[(i+15)..i] = match op {
+      KHM8  => khm(rs1_byte_top, rs2_byte_top) @ khm(rs1_byte_bottom, rs2_byte_bottom),
+      KHMX8 => khm(rs1_byte_top, rs2_byte_bottom) @ khm(rs1_byte_bottom, rs2_byte_top)
+    };
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+} 
+
+mapping p_khm_8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
+    KHM8  <-> "KHM8",
+    KHMX8 <-> "KHMX8"
+}
+
+mapping clause assembly = PEXT_KHM_8(rs2, rs1, rd, p_inst)
+  <-> p_khm_8_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)

@@ -268,7 +268,7 @@ mapping p_32_compute_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     RSUBW    <-> "RSUBW ",
     URSUBW    <-> "URSUBW ",
     MAXW    <-> "MAXW ",
-    MINW    <-> "MINW ",
+    MINW    <-> "MINW "
 }
 
 mapping clause assembly = PEXT_32_COMPUTE(rs2, rs1, rd, p_inst)
