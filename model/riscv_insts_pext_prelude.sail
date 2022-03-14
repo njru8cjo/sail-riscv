@@ -133,9 +133,9 @@ function ksub (v1, v2) =
 val uksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function uksub (v1, v2) =
-  let ub : bits(65) = EXTZ(sail_ones ('n)) in
-  let v1ext : bits(65) = EXTZ(v1) in
-  let v2ext : bits(65) = EXTZ(v2) in
+  let ub : bits(66) = EXTZ(sail_ones ('n)) in
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
   let diffext = v1ext - v2ext in
   if ub <_u diffext then { pext_write_OV (0b1); zeros('n) }
   else { slice (diffext, 0, 'n) }

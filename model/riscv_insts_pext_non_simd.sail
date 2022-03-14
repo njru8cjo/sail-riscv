@@ -541,16 +541,18 @@ mapping clause encdec = PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, BITREVI) <->
 mapping clause encdec = PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, SRAI_U) <->
   0b110101 @ imm6 @ rs1 @ 0b001 @ rd @ 0b1110111
 
+
 function clause execute (PEXT_INST_IMM6_RS1_RD(imm6, rs1, rd, op)) = {
   let rs1_val = X(rs1);
+  let msb : bits(8) = EXTZ(imm6) ;
   X(rd) = 
   if sizeof(xlen) == 32
   then match op {
-    BITREVI   =>   bitrev32(rs1_val),
+    BITREVI   =>   shift_right_logic(bitrev32(rs1_val),0x1F - msb), 
     SRAI_U    =>   shift_right_arith_u(rs1_val, EXTZ(imm6[4..0]))
   }
   else match op {
-    BITREVI   =>   bitrev64(rs1_val),
+    BITREVI   =>   shift_right_logic(bitrev64(rs1_val),0x3F - msb),
     SRAI_U    =>   shift_right_arith_u(rs1_val, EXTZ(imm6))
   };
   RETIRE_SUCCESS
