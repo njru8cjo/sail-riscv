@@ -402,6 +402,26 @@ function sshm (v1, v2)=
   rshift[15..0]
   else { pext_write_OV (0b1); 0x7FFF;}
 
+/* q31 auxiliary functions */
+val kdm :
+  (bits(16), bits(16)) -> bits(32) effect {rreg,wreg}
+function kdm (v1, v2) =
+  let lb : bits(16) = not_vec(EXTS(sail_ones (16) >> 1)) in
+  if v1 == lb & v2 == lb then { pext_write_OV (0b1); ones (32) >> 1 }
+  else { to_bits (31, signed(v1) * signed(v2)) @ 0b0 }
+
+val kdmaw :
+  (bits(16), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
+function kdmaw (v1, v2, rd) = {
+  let resQ31 : bits(32) = kdm(v1, v2);
+  let tmp : bits(33) = EXTS(resQ31) + EXTS(rd);
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
+  if tmp <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
+  else if ub <_s tmp then { pext_write_OV (0b1); ones (32) >> 1 }
+  else { slice (tmp, 0, 32) }
+}
+
 /* bit reverse auxiliary functions */
 val bitrev32 :
   (bits(32)) -> bits(32)
