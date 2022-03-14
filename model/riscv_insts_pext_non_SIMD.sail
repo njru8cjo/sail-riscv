@@ -178,22 +178,22 @@ function clause execute (PEXT_32_COMPUTE(rs2, rs1, rd, op)) = {
     MAXW    => smax(rs1_word, rs2_word),
     MINW    => smin(rs1_word, rs2_word),
     RADDW   => { 
-      let res : bits(33) = add_bits(EXTS(rs1_32), EXTS(rs2_32)); 
+      let res : bits(33) = add_bits(EXTS(rs1_word), EXTS(rs2_word)); 
       slice (res, 1, 32) 
     },
     RSUBW   => { 
-      let res : bits(33) = sub_bits(EXTS(rs1_32), EXTS(rs2_32));
+      let res : bits(33) = sub_bits(EXTS(rs1_word), EXTS(rs2_word));
       slice (res, 1, 32)
     },
-    URADDW  => { let res : bits(33) = add_bits(EXTZ(rs1_32), EXTZ(rs2_32));
+    URADDW  => { let res : bits(33) = add_bits(EXTZ(rs1_word), EXTZ(rs2_word));
     slice (res, 1, 32) 
     },
     URRSUBW => {
-      let res : bits(33) = sub_bits(EXTZ(rs1_32), EXTZ(rs2_32));
+      let res : bits(33) = sub_bits(EXTZ(rs1_word), EXTZ(rs2_word));
       slice (res, 1, 32)
     }
   };  
-  if sizeof(xlen) == 32 then X(rd) = result; else X(rd) = EXTS(result);
+  if sizeof(xlen) == 32 then X(rd) = result else X(rd) = EXTS(result);
   RETIRE_SUCCESS
 }
 
@@ -220,12 +220,12 @@ mapping clause encdec = PEXT_32_PAIR_RD_COMPUTE(rs2, rs1, rd, MULSR64) <->
 function clause execute (PEXT_32_PAIR_RD_COMPUTE(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
-  let rs1_32  = slice(rs1_val, 0, 32);
-  let rs2_32  = slice(rs2_val, 0, 32);
+  let rs1_word = slice(rs1_val, 0, 32);
+  let rs2_word = slice(rs2_val, 0, 32);
   result : bits(64) = zeros(); 
   result = match op {
-          MULR64  => umul33_64(EXTZ(rs1_32), EXTZ(rs2_32)),
-          MULSR64 => mul32_64(rs1_32, rs2_32)
+          MULR64  => umul33_64(EXTZ(rs1_word), EXTZ(rs2_word)),
+          MULSR64 => mul32_64(rs1_word, rs2_word)
     };
 
   if sizeof(xlen) == 32
