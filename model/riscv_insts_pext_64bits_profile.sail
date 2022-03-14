@@ -131,8 +131,8 @@ function clause execute (PEXT_INST_32BITS_MUL_WITH_64BITS_ADD_SUB(rs2, rs1, rd, 
       UMSR64   => X(rd) - ( umul(rs1_word_B, rs2_word_B) + umul(rs1_word_T, rs2_word_T) ),
       KMAR64   => kadd(X(rd), (smul(rs1_word_B, rs2_word_B) + smul(rs1_word_T, rs2_word_T) )),
       KMSR64   => ksub(X(rd), (smul(rs1_word_B, rs2_word_B) + smul(rs1_word_T, rs2_word_T) )),
-      UKMAR64  => ukadd(X(rd), (umul(rs1_word_B, rs2_word_B) + umul(rs1_word_T, rs2_word_T) )),
-      UKMSR64  => uksub(X(rd), (umul(rs1_word_B, rs2_word_B) + umul(rs1_word_T, rs2_word_T) ))
+      UKMAR64  => {let tmp_val : bits(64) = ukadd (umul(rs1_word_B, rs2_word_B) , umul(rs1_word_T, rs2_word_T)); ukadd(X(rd), tmp_val) },
+      UKMSR64  => {let tmp_val : bits(64) = ukadd (umul(rs1_word_B, rs2_word_B) , umul(rs1_word_T, rs2_word_T)); uksub(X(rd), tmp_val) }
     };
     X(rd) = result;
   };
