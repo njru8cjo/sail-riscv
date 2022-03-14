@@ -425,3 +425,12 @@ function bitrev64 (v) = {
   tmp = 0x00000000 @ ((tmp[111..48] & 0x0000FFFF0000FFFF) | (tmp[79..16] & 0xFFFF0000FFFF0000)) @ 0x00000000;
   ((tmp[127..64] & 0x00000000FFFFFFFF) | (tmp[63..0]  & 0xFFFFFFFF00000000))
 }
+
+/* insb auxiliary functions */
+val insb :
+  (byte, byte, bits(64)) -> bits(64)
+function insb (vbyte, vbpos, vrd) = {
+  let insbyte : bits(64) = (0x00000000000000 @ vbyte) << (vbpos << 3);
+  let mask : bits(64) = not_vec((0x00000000000000FF) << (vbpos << 3));
+  (vrd & mask) + insbyte
+}
