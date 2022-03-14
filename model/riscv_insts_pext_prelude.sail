@@ -159,6 +159,21 @@ function khm (v1, v2) =
   else { if 'n == 8 then { to_bits (2 * 'n, signed(v1) * signed(v2))[14..7] }
          else { to_bits (2 * 'n, signed(v1) * signed(v2))[30..15] } }
 
+val umul33_64 :
+  (bits(33), bits(33)) -> bits(64)
+function umul33_64 (v1, v2) =
+  to_bits (66, unsigned(v1) * unsigned(v2))[63..0]
+
+val mul32_64 :
+  (bits(32), bits(32)) -> bits(64)
+function mul32_64 (v1, v2) =
+  to_bits (64, signed(v1) * signed(v2))
+
+val mulb :
+  (bits(32), bits(32)) -> bits(32)
+function mulb (v1, v2) =
+  to_bits (64, unsigned(v1) * unsigned(v2))[31..0]
+
 /* shift auxiliary functions */ 
 val shift_right_arith : forall 'n, 'n == 8 | 'n == 9 | 'n == 16 | 'n == 17 | 'n == 32 | 'n == 33 | 'n == 64.
   (bits ('n), byte) -> bits ('n)
@@ -350,4 +365,63 @@ function clo (v) = {
   if vcpl[31..30] == 0b11   then { cnt = cnt + 2;  vcpl = vcpl << 2 };
   if vcpl[31..31] == 0b1    then { cnt = cnt + 1 };
   cnt = cnt + 'n - 32; cnt } }
+
+/* q15 auxiliary functions */
+val q15 : 
+  bits(33) -> bits(16) effect {rreg, wreg}
+function q15 (v) =
+  let ub : bits(33) = EXTS(0x7FFF) in
+  let lb : bits(33) = EXTS(0x8000) in
+  if v <_s lb then { pext_write_OV (0b1); 0x8000;}
+  else if ub <_s v then { pext_write_OV (0b1); 0x7FFF;}
+  else v[15..0]
+
+val q15_l_u : 
+  bits(33) -> bits(16) effect {rreg, wreg}
+function q15_l_u (v) =
+  let ub : bits(33) = EXTZ(0xFFFF) in
+  if ub <_u v then { pext_write_OV (0b1); 0xFFFF;}
+  else v[15..0]
+
+val q15_s_u : 
+  bits(33) -> bits(16) effect {rreg, wreg}
+function q15_s_u (v) =
+  let ub : bits(33) = EXTZ(0xFFFF) in
+  let lb : bits(33) = EXTZ(0x0000) in
+  if ub <_s v then { pext_write_OV (0b1); 0xFFFF;}
+  else if v <_s lb then { pext_write_OV (0b1); 0x0000;}
+  else v[15..0]
   
+val sshm :
+  (bits(16), bits(16)) -> bits(16) effect {rreg, wreg}
+function sshm (v1, v2)=
+  if (v1 != 0x8000) | (v2 != 0x8000)
+  then 
+  let res : bits(32) = to_bits(32, signed(v1) * signed(v2)) in
+  let rshift : bits(32) = EXTS(res >> 15) in 
+  rshift[15..0]
+  else { pext_write_OV (0b1); 0x7FFF;}
+
+/* bit reverse auxiliary functions */
+val bitrev32 :
+  (bits(32)) -> bits(32)
+function bitrev32 (v) = {
+  var tmp : bits(64) = 0x0000 @ v @ 0x0000;
+  tmp = 0x0000 @ ((tmp[48..17] & 0x55555555) | (tmp[46..15] & 0xAAAAAAAA)) @ 0x0000;
+  tmp = 0x0000 @ ((tmp[49..18] & 0x33333333) | (tmp[45..14] & 0xCCCCCCCC)) @ 0x0000;
+  tmp = 0x0000 @ ((tmp[51..20] & 0x0F0F0F0F) | (tmp[43..12] & 0xF0F0F0F0)) @ 0x0000;
+  tmp = 0x0000 @ ((tmp[55..24] & 0x00FF00FF) | (tmp[39..8]  & 0xFF00FF00)) @ 0x0000;
+  ((tmp[63..32] & 0x0000FFFF) | (tmp[31..0]  & 0xFFFF0000))
+}
+
+val bitrev64 :
+  (bits(64)) -> bits(64)
+function bitrev64 (v) = {
+  var tmp : bits(128) = 0x00000000 @ v @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[96..33]  & 0x5555555555555555) | (tmp[94..31] & 0xAAAAAAAAAAAAAAAA)) @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[97..34]  & 0x3333333333333333) | (tmp[93..30] & 0xCCCCCCCCCCCCCCCC)) @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[99..36]  & 0x0F0F0F0F0F0F0F0F) | (tmp[91..28] & 0xF0F0F0F0F0F0F0F0)) @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[103..40] & 0x00FF00FF00FF00FF) | (tmp[87..24] & 0xFF00FF00FF00FF00)) @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[111..48] & 0x0000FFFF0000FFFF) | (tmp[79..16] & 0xFFFF0000FFFF0000)) @ 0x00000000;
+  ((tmp[127..64] & 0x00000000FFFFFFFF) | (tmp[63..0]  & 0xFFFFFFFF00000000))
+}
