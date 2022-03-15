@@ -2,7 +2,7 @@
 /* Academia Sinica, Taiwan*/
 /* Andes Technology Corporation*/
 
-/* SIMD 32bits add/sub instructions  */
+/* PEXT_64ONLY_ALU_CMP_32 AST */
 union clause ast = PEXT_64ONLY_ALU_CMP_32 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_64ONLY_ALU_CMP_32(rs2, rs1, rd, ADD32) <->
@@ -114,7 +114,7 @@ mapping p_64only_alu_cmp_32_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_64ONLY_ALU_CMP_32(rs2, rs1, rd, p_inst)
   <-> p_64only_alu_cmp_32_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/* PEXT_64ONLY_Q15 AST  */
+/* PEXT_64ONLY_Q15 AST */
 union clause ast = PEXT_64ONLY_Q15 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_64ONLY_Q15(rs2, rs1, rd, KHMBB16) <->
@@ -178,7 +178,7 @@ mapping p_64only_q15_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_64ONLY_Q15(rs2, rs1, rd, p_inst)
   <-> p_64only_q15_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/* PEXT_64ONLY_32BITS_MUL AST  */
+/* PEXT_64ONLY_32BITS_MUL AST */
 union clause ast = PEXT_64ONLY_32BITS_MUL : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_64ONLY_32BITS_MUL(rs2, rs1, rd, SMBT32) <->
@@ -265,7 +265,7 @@ mapping p_64only_32bits_mul_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_64ONLY_32BITS_MUL(rs2, rs1, rd, p_inst)
   <-> p_64only_32bits_mul_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/* 32bit pack instructions */
+/* PEXT_64ONLY_32BITS_PACK AST */
 union clause ast = PEXT_64ONLY_32BITS_PACK : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_64ONLY_32BITS_PACK(rs2, rs1, rd, PKBB32) <->
@@ -387,7 +387,7 @@ function clause execute (PEXT_INST_64ONLY_KABS32(rs1, rd)) = {
 mapping clause assembly = PEXT_INST_64ONLY_KABS32(rs1, rd)
   <-> "KABS32" ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
 
-/* SIMD 32 bits cross instructions */
+/* PEXT_64ONLY_CROSS_32 AST */
 union clause ast = PEXT_64ONLY_CROSS_32 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_64ONLY_CROSS_32(rs2, rs1, rd, CRAS32) <->
