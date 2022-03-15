@@ -17,7 +17,7 @@ function kmsbmac (v1, v2, rd) =
   let res : bits(33) = add_bits(EXTS(msbsmul(v1, v2)), EXTS(rd)) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
-  else { slice (res, 0, 32) }
+  else { slice(res, 0, 32) }
 
 val kmsbmac_u :
   (bits (32), bits (32), bits (32)) -> bits (32) effect {rreg,wreg}
@@ -27,7 +27,7 @@ function kmsbmac_u (v1, v2, rd) =
   let res : bits(33) = add_bits(EXTS(msbsmul_u(v1, v2)), EXTS(rd)) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
-  else { slice (res, 0, 32) }
+  else { slice(res, 0, 32) }
 
 val kmsbsb :
   (bits (32), bits (32), bits (32)) -> bits (32) effect {rreg,wreg}
@@ -37,7 +37,7 @@ function kmsbsb (v1, v2, rd) =
   let res : bits(33) = sub_bits(EXTS(rd), EXTS(msbsmul(v1, v2))) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
-  else { slice (res, 0, 32) }
+  else { slice(res, 0, 32) }
 
 val kmsbsb_u :
   (bits (32), bits (32), bits (32)) -> bits (32) effect {rreg,wreg}
@@ -47,7 +47,7 @@ function kmsbsb_u (v1, v2, rd) =
   let res : bits(33) = sub_bits(EXTS(rd), EXTS(msbsmul_u(v1, v2))) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
-  else { slice (res, 0, 32) }
+  else { slice(res, 0, 32) }
 
 val kwmsbmul :
   (bits (32), bits (32)) -> bits (32) effect {rreg,wreg}
@@ -85,7 +85,7 @@ function kmmaw (v1, v2, rd) =
   let lb : bits(33) = not_vec (ub) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
-  else { slice (res, 0, 32) }
+  else { slice(res, 0, 32) }
 
 val kmmaw_u :
   (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
@@ -97,7 +97,7 @@ function kmmaw_u (v1, v2, rd) =
   let lb : bits(33) = not_vec (ub) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
-  else { slice (res, 0, 32) }
+  else { slice(res, 0, 32) }
 
 val kmmaw2 :
   (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
@@ -111,7 +111,7 @@ function kmmaw2 (v1, v2, rd) =
   let lb : bits(33) = not_vec (ub) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
-  else { slice (res, 0, 32) }
+  else { slice(res, 0, 32) }
 
 val kmmaw2_u :
   (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
@@ -126,7 +126,7 @@ function kmmaw2_u (v1, v2, rd) =
   let lb : bits(33) = not_vec (ub) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
-  else { slice (res, 0, 32) }
+  else { slice(res, 0, 32) }
 
 val kmmw2 :
   (bits(32), bits(16)) -> bits(32) effect {rreg,wreg}
@@ -167,26 +167,24 @@ mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KWMMUL) <->
 mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KWMMUL_U) <->
   0b0111001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
-
 function clause execute (PEXT_32_32_MUL_ADD(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
   let rd_val  = X(rd);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
-    let rs1_32 =  slice (rs1_val, i, 32);
-    let rs2_32 =  slice (rs2_val, i, 32);
-    let rd_32  =  slice (rd_val, i, 32);
+    let rs1_word =  slice(rs1_val, i, 32);
+    let rs2_word =  slice(rs2_val, i, 32);
+    let rd_word  =  slice(rd_val, i, 32);
     result[(i+31)..i] = match op {
-      SMMUL    => msbsmul(rs1_32, rs2_32),
-      SMMUL_U  => msbsmul_u(rs1_32, rs2_32),
-      KMMAC    => kmsbmac(rs1_32, rs2_32, rd_32),
-      KMMAC_U    => kmsbmac_u(rs1_32, rs2_32, rd_32),
-      KMMSB    => kmsbsb(rs1_32, rs2_32, rd_32),
-      KMMSB_U  => kmsbsb_u(rs1_32, rs2_32, rd_32),
-      KWMMUL   => kwmsbmul(rs1_32, rs2_32 ),
-      KWMMUL_U => kwmsbmul_u(rs1_32, rs2_32)
-
+      SMMUL    => msbsmul(rs1_word, rs2_word),
+      SMMUL_U  => msbsmul_u(rs1_word, rs2_word),
+      KMMAC    => kmsbmac(rs1_word, rs2_word, rd_word),
+      KMMAC_U  => kmsbmac_u(rs1_word, rs2_word, rd_word),
+      KMMSB    => kmsbsb(rs1_word, rs2_word, rd_word),
+      KMMSB_U  => kmsbsb_u(rs1_word, rs2_word, rd_word),
+      KWMMUL   => kwmsbmul(rs1_word, rs2_word ),
+      KWMMUL_U => kwmsbmul_u(rs1_word, rs2_word)
     };
   };
   X(rd) = result;
@@ -195,13 +193,13 @@ function clause execute (PEXT_32_32_MUL_ADD(rs2, rs1, rd, op)) = {
 
 mapping p_32_32_muladd_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     SMMUL    <-> "SMMUL",
-    SMMUL_U   <-> "SMMUL_U",
-    KMMAC  <-> "KMMAC",
-    KMMAC_U   <-> "KMMAC_U",
-    KMMSB  <-> "KMMSB",
-    KMMSB_U    <-> "KMMSB_U",
+    SMMUL_U  <-> "SMMUL_U",
+    KMMAC    <-> "KMMAC",
+    KMMAC_U  <-> "KMMAC_U",
+    KMMSB    <-> "KMMSB",
+    KMMSB_U  <-> "KMMSB_U",
     KWMMUL   <-> "KWMMUL",
-    KWMMUL_U  <-> "KWMMUL_U"
+    KWMMUL_U <-> "KWMMUL_U"
 }
 
 mapping clause assembly = PEXT_32_32_MUL_ADD(rs2, rs1, rd, p_inst)
@@ -211,7 +209,6 @@ mapping clause assembly = PEXT_32_32_MUL_ADD(rs2, rs1, rd, p_inst)
 Most Significant Word “32x16” Multiply & Add Instructions
 16 instruction
 */
-
 
 union clause ast = PEXT_32_16_MUL_ADD : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
@@ -255,26 +252,26 @@ function clause execute (PEXT_32_16_MUL_ADD(rs2, rs1, rd, op)) = {
   let rd_val  = X(rd);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
-    let rs1_32 =  slice (rs1_val, i, 32);
-    let rs2_32 =  slice (rs2_val, i, 32);
-    let rd_32  =  slice (rd_val, i, 32);
+    let rs1_word =  slice(rs1_val, i, 32);
+    let rs2_word =  slice(rs2_val, i, 32);
+    let rd_word  =  slice(rd_val, i, 32);
     result[(i+31)..i] = match op {
-      SMMWB    => smmw(rs1_32, slice (rs2_32, 0, 16)),
-      SMMWB_U  => smmw_u(rs1_32, slice (rs2_32, 0, 16)),
-      SMMWT    => smmw(rs1_32, slice (rs2_32, 16, 16)),
-      SMMWT_U  => smmw_u(rs1_32, slice (rs2_32, 16, 16)),
-      KMMAWB   => kmmaw(rs1_32, slice (rs2_32, 0, 16), rd_32),
-      KMMAWB_U => kmmaw_u(rs1_32, slice (rs2_32, 0, 16), rd_32),
-      KMMAWT   => kmmaw(rs1_32, slice (rs2_32, 16, 16), rd_32),
-      KMMAWT_U => kmmaw_u(rs1_32, slice (rs2_32, 16, 16), rd_32),
-      KMMWB2   => kmmw2(rs1_32, slice (rs2_32, 0, 16)),
-      KMMWB2_U => kmmw2_u(rs1_32, slice (rs2_32, 0, 16)),
-      KMMWT2   => kmmw2(rs1_32, slice (rs2_32, 16, 16)),
-      KMMWT2_U => kmmw2_u(rs1_32, slice (rs2_32, 16, 16)),
-      KMMAWB2  => kmmaw2(rs1_32, slice (rs2_32, 0, 16), rd_32),
-      KMMAWB2_U=> kmmaw2_u(rs1_32, slice (rs2_32, 0, 16), rd_32),
-      KMMAWT2  => kmmaw2(rs1_32, slice (rs2_32, 16, 16), rd_32),
-      KMMAWT2_U=> kmmaw2_u(rs1_32, slice (rs2_32, 16, 16), rd_32)
+      SMMWB    => smmw(rs1_word, slice(rs2_word, 0, 16)),
+      SMMWB_U  => smmw_u(rs1_word, slice(rs2_word, 0, 16)),
+      SMMWT    => smmw(rs1_word, slice(rs2_word, 16, 16)),
+      SMMWT_U  => smmw_u(rs1_word, slice(rs2_word, 16, 16)),
+      KMMAWB   => kmmaw(rs1_word, slice(rs2_word, 0, 16), rd_word),
+      KMMAWB_U => kmmaw_u(rs1_word, slice(rs2_word, 0, 16), rd_word),
+      KMMAWT   => kmmaw(rs1_word, slice(rs2_word, 16, 16), rd_word),
+      KMMAWT_U => kmmaw_u(rs1_word, slice(rs2_word, 16, 16), rd_word),
+      KMMWB2   => kmmw2(rs1_word, slice(rs2_word, 0, 16)),
+      KMMWB2_U => kmmw2_u(rs1_word, slice(rs2_word, 0, 16)),
+      KMMWT2   => kmmw2(rs1_word, slice(rs2_word, 16, 16)),
+      KMMWT2_U => kmmw2_u(rs1_word, slice(rs2_word, 16, 16)),
+      KMMAWB2  => kmmaw2(rs1_word, slice(rs2_word, 0, 16), rd_word),
+      KMMAWB2_U=> kmmaw2_u(rs1_word, slice(rs2_word, 0, 16), rd_word),
+      KMMAWT2  => kmmaw2(rs1_word, slice(rs2_word, 16, 16), rd_word),
+      KMMAWT2_U=> kmmaw2_u(rs1_word, slice(rs2_word, 16, 16), rd_word)
     };
   };
   X(rd) = result;
@@ -319,7 +316,6 @@ function kmda (a, b, c, d) =
     let cd = to_bits (2 * 'n, signed (c) * signed (d)) in
     ab + cd
 
-
 val kmada : forall 'n, 'n == 16 | 'n == 32.
   (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
   effect {rreg,wreg}
@@ -327,9 +323,9 @@ function kmada (rd, rs11, rs21, rs10, rs20) =
   let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
   let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
   let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) + EXTS(smul(rs10, rs20)) in
-  if res <_s lb then { pext_write_OV (0b1); slice (lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice (ub, 0, 2 * 'n) }
-  else { slice (res, 0, 2 * 'n) }
+  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
+  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
+  else { slice(res, 0, 2 * 'n) }
 
 val kmads : forall 'n, 'n == 16 | 'n == 32.
   (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
@@ -338,9 +334,9 @@ function kmads (rd, rs11, rs21, rs10, rs20) =
   let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
   let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
   let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20)) in
-  if res <_s lb then { pext_write_OV (0b1); slice (lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice (ub, 0, 2 * 'n) }
-  else { slice (res, 0, 2 * 'n) }
+  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
+  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
+  else { slice(res, 0, 2 * 'n) }
 
 val kmsda : forall 'n, 'n == 16 | 'n == 32.
   (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
@@ -349,9 +345,9 @@ function kmsda (rd, rs11, rs21, rs10, rs20) =
   let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
   let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
   let res : bits(66) = EXTS(rd) - EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20)) in
-  if res <_s lb then { pext_write_OV (0b1); slice (lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice (ub, 0, 2 * 'n) }
-  else { slice (res, 0, 2 * 'n) }
+  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
+  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
+  else { slice(res, 0, 2 * 'n) }
 
 val sumul : forall 'n, 'n == 8.
   (bits('n), bits('n)) -> bits(32)
@@ -398,35 +394,34 @@ mapping clause encdec = PEXT_16_32_MULADD(rs2, rs1, rd, KMSDA) <->
 mapping clause encdec = PEXT_16_32_MULADD(rs2, rs1, rd, KMSXDA) <->
   0b0100111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
-  
 function clause execute (PEXT_16_32_MULADD(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
   let rd_val  = X(rd);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
-    let rs1_32 =  slice (rs1_val, i, 32);
-    let rs2_32 =  slice (rs2_val, i, 32);
-    let rd_32  =  slice (rd_val, i, 32);
+    let rs1_word =  slice(rs1_val, i, 32);
+    let rs2_word =  slice(rs2_val, i, 32);
+    let rd_word  =  slice(rd_val, i, 32);
     result[(i+31)..i] = match op {
-      SMBB16    => smul(slice (rs1_32, 0, 16), slice (rs2_32, 0, 16)),
-      SMBT16    => smul(slice (rs1_32, 0, 16), slice (rs2_32, 16, 16)),
-      SMTT16    => smul(slice (rs1_32, 16, 16), slice (rs2_32, 16, 16)),
-      KMDA      => kmda(slice (rs1_32, 16, 16), slice (rs2_32, 16, 16), slice (rs1_32, 0, 16), slice (rs2_32, 0, 16)),
-      KMXDA     => kmda(slice (rs1_32, 16, 16), slice (rs2_32, 0, 16), slice (rs1_32, 0, 16), slice (rs2_32, 16, 16)),
-      SMDS      => smul(slice (rs1_32, 16, 16), slice (rs2_32, 16, 16)) - smul(slice (rs1_32, 0, 16), slice (rs2_32, 0, 16)),
-      SMDRS     => smul(slice (rs1_32, 0, 16), slice (rs2_32, 0, 16)) - smul(slice (rs1_32, 16, 16), slice (rs2_32, 16, 16)),
-      SMXDS     => smul(slice (rs1_32, 16, 16), slice (rs2_32, 0, 16)) - smul(slice (rs1_32, 0, 16), slice (rs2_32, 16, 16)),
-      KMABB     => kadd (smul(slice (rs1_32, 0, 16), slice (rs2_32, 0, 16)), rd_32),
-      KMABT     => kadd (smul(slice (rs1_32, 0, 16), slice (rs2_32, 16, 16)), rd_32),
-      KMATT     => kadd (smul(slice (rs1_32, 16, 16), slice (rs2_32, 16, 16)), rd_32), 
-      KMADA     => kmada (rd_32, slice (rs1_32, 16, 16), slice (rs2_32, 16, 16), slice (rs1_32, 0, 16), slice (rs2_32, 0, 16)),
-      KMAXDA    => kmada (rd_32, slice (rs1_32, 16, 16), slice (rs2_32, 0, 16), slice (rs1_32, 0, 16), slice (rs2_32, 16, 16)),
-      KMADS     => kmads (rd_32, slice (rs1_32, 16, 16), slice (rs2_32, 16, 16), slice (rs1_32, 0, 16), slice (rs2_32, 0, 16)),
-      KMADRS    => kmads (rd_32, slice (rs1_32, 0, 16), slice (rs2_32, 0, 16), slice (rs1_32, 16, 16), slice (rs2_32, 16, 16)),
-      KMAXDS    => kmads (rd_32, slice (rs1_32, 16, 16), slice (rs2_32, 0, 16), slice (rs1_32, 0, 16), slice (rs2_32, 16, 16)),
-      KMSDA     => kmsda (rd_32, slice (rs1_32, 16, 16), slice (rs2_32, 16, 16), slice (rs1_32, 0, 16), slice (rs2_32, 0, 16)),
-      KMSXDA    => kmsda (rd_32, slice (rs1_32, 16, 16), slice (rs2_32, 0, 16), slice (rs1_32, 0, 16), slice (rs2_32, 16, 16))
+      SMBB16    => smul(slice(rs1_word, 0, 16), slice(rs2_word, 0, 16)),
+      SMBT16    => smul(slice(rs1_word, 0, 16), slice(rs2_word, 16, 16)),
+      SMTT16    => smul(slice(rs1_word, 16, 16), slice(rs2_word, 16, 16)),
+      KMDA      => kmda(slice(rs1_word, 16, 16), slice(rs2_word, 16, 16), slice(rs1_word, 0, 16), slice(rs2_word, 0, 16)),
+      KMXDA     => kmda(slice(rs1_word, 16, 16), slice(rs2_word, 0, 16), slice(rs1_word, 0, 16), slice(rs2_word, 16, 16)),
+      SMDS      => smul(slice(rs1_word, 16, 16), slice(rs2_word, 16, 16)) - smul(slice(rs1_word, 0, 16), slice(rs2_word, 0, 16)),
+      SMDRS     => smul(slice(rs1_word, 0, 16), slice(rs2_word, 0, 16)) - smul(slice(rs1_word, 16, 16), slice(rs2_word, 16, 16)),
+      SMXDS     => smul(slice(rs1_word, 16, 16), slice(rs2_word, 0, 16)) - smul(slice(rs1_word, 0, 16), slice(rs2_word, 16, 16)),
+      KMABB     => kadd (smul(slice(rs1_word, 0, 16), slice(rs2_word, 0, 16)), rd_word),
+      KMABT     => kadd (smul(slice(rs1_word, 0, 16), slice(rs2_word, 16, 16)), rd_word),
+      KMATT     => kadd (smul(slice(rs1_word, 16, 16), slice(rs2_word, 16, 16)), rd_word), 
+      KMADA     => kmada (rd_word, slice(rs1_word, 16, 16), slice(rs2_word, 16, 16), slice(rs1_word, 0, 16), slice(rs2_word, 0, 16)),
+      KMAXDA    => kmada (rd_word, slice(rs1_word, 16, 16), slice(rs2_word, 0, 16), slice(rs1_word, 0, 16), slice(rs2_word, 16, 16)),
+      KMADS     => kmads (rd_word, slice(rs1_word, 16, 16), slice(rs2_word, 16, 16), slice(rs1_word, 0, 16), slice(rs2_word, 0, 16)),
+      KMADRS    => kmads (rd_word, slice(rs1_word, 0, 16), slice(rs2_word, 0, 16), slice(rs1_word, 16, 16), slice(rs2_word, 16, 16)),
+      KMAXDS    => kmads (rd_word, slice(rs1_word, 16, 16), slice(rs2_word, 0, 16), slice(rs1_word, 0, 16), slice(rs2_word, 16, 16)),
+      KMSDA     => kmsda (rd_word, slice(rs1_word, 16, 16), slice(rs2_word, 16, 16), slice(rs1_word, 0, 16), slice(rs2_word, 0, 16)),
+      KMSXDA    => kmsda (rd_word, slice(rs1_word, 16, 16), slice(rs2_word, 0, 16), slice(rs1_word, 0, 16), slice(rs2_word, 16, 16))
     };
   };
   X(rd) = result;
@@ -434,24 +429,24 @@ function clause execute (PEXT_16_32_MULADD(rs2, rs1, rd, op)) = {
 }
 
 mapping p_16_32_muladd_mapping : p_inst_rs2_rs1_rd_op <-> string = {
-    SMBB16    <-> "SMBB16",
-    SMBT16   <-> "SMBT16",
-    SMTT16  <-> "SMTT16",
+    SMBB16 <-> "SMBB16",
+    SMBT16 <-> "SMBT16",
+    SMTT16 <-> "SMTT16",
     KMDA   <-> "KMDA",
     KMXDA  <-> "KMXDA",
-    SMDS    <-> "SMDS",
-    SMDRS   <-> "SMDRS",
+    SMDS   <-> "SMDS",
+    SMDRS  <-> "SMDRS",
     SMXDS  <-> "SMXDS",
-    KMABB    <-> "KMABB",
-    KMABT   <-> "KMABT",
+    KMABB  <-> "KMABB",
+    KMABT  <-> "KMABT",
     KMATT  <-> "KMATT",
-    KMADA   <-> "KMADA",
-    KMAXDA  <-> "KMAXDA",
-    KMADS    <-> "KMADS",
-    KMADRS   <-> "KMADRS",
-    KMAXDS  <-> "KMAXDS",
-    KMSDA    <-> "KMSDA",
-    KMSXDA   <-> "KMSXDA"
+    KMADA  <-> "KMADA",
+    KMAXDA <-> "KMAXDA",
+    KMADS  <-> "KMADS",
+    KMADRS <-> "KMADRS",
+    KMAXDS <-> "KMAXDS",
+    KMSDA  <-> "KMSDA",
+    KMSXDA <-> "KMSXDA"
 }
 
 mapping clause assembly = PEXT_16_32_MULADD(rs2, rs1, rd, p_inst)
@@ -468,18 +463,17 @@ mapping clause encdec = PEXT_SMAL(rs2, rs1, rd) <->
 function clause execute (PEXT_SMAL(rs2, rs1, rd)) = {
     let rs1_val = X(rs1);
     let rs2_val = X(rs2);
-    
     if sizeof(xlen) == 32
     then {
         let rs10 = (rs1 >> 1) << 1 ;
         let rs11 = rs10 + 1 ;
         let rd0 = (rd >> 1) << 1 ;
         let rd1 = rd0 + 1 ;
-        let result : bits(64) = (X(rs11) @ X(rs10)) + EXTS(smul(slice (rs2_val, 16, 16), slice (rs2_val, 0, 16))); 
+        let result : bits(64) = (X(rs11) @ X(rs10)) + EXTS(smul(slice(rs2_val, 16, 16), slice(rs2_val, 0, 16))); 
         X(rd1) = result[63..32];
         X(rd0) = result[31..0];
     } else
-        X(rd)  = rs1_val + EXTS(smul(slice (rs2_val, 48, 16), slice (rs2_val, 32, 16))) + EXTS(smul(slice (rs2_val, 16, 16), slice (rs2_val, 0, 16)));
+        X(rd)  = rs1_val + EXTS(smul(slice(rs2_val, 48, 16), slice(rs2_val, 32, 16))) + EXTS(smul(slice(rs2_val, 16, 16), slice(rs2_val, 0, 16)));
     RETIRE_SUCCESS
 }
 
@@ -540,18 +534,18 @@ function clause execute (PEXT_8_32_MUL_ADD(rs2, rs1, rd, op)) = {
   result : xlenbits = zeros();
   tmp_value : bits(32) = zeros();
   foreach (i from 0 to (sizeof(xlen) - 8) by 8) {
-    let rs1_8 =  slice (rs1_val, i, 8);
-    let rs2_8 =  slice (rs2_val, i, 8);
+    let rs1_byte =  slice(rs1_val, i, 8);
+    let rs2_byte =  slice(rs2_val, i, 8);
     
     tmp_value = match op {
-      SMAQA    => tmp_value + EXTS(smul(rs1_8,rs2_8)),
-      UMAQA    => tmp_value + EXTZ(umul(rs1_8,rs2_8)),
-      SMAQA_SU => tmp_value + EXTS(sumul(rs1_8,rs2_8))
+      SMAQA    => tmp_value + EXTS(smul(rs1_byte,rs2_byte)),
+      UMAQA    => tmp_value + EXTZ(umul(rs1_byte,rs2_byte)),
+      SMAQA_SU => tmp_value + EXTS(sumul(rs1_byte,rs2_byte))
     };
     if( i==24 | i==56)
     then {
-      let rd_32  =  slice (rd_val, (i + 8 - 32), 32);
-      result[(i + 7)..(i - 24)] = rd_32 + tmp_value;
+      let rd_word  =  slice(rd_val, (i + 8 - 32), 32);
+      result[(i + 7)..(i - 24)] = rd_word + tmp_value;
       tmp_value = zeros();
     }
   };
@@ -561,8 +555,8 @@ function clause execute (PEXT_8_32_MUL_ADD(rs2, rs1, rd, op)) = {
 
 mapping p_8_32_muladd_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     SMAQA    <-> "SMAQA",
-    UMAQA   <-> "UMAQA",
-    SMAQA_SU  <-> "SMAQA_SU"
+    UMAQA    <-> "UMAQA",
+    SMAQA_SU <-> "SMAQA_SU"
 }
 
 mapping clause assembly = PEXT_8_32_MUL_ADD(rs2, rs1, rd, p_inst)
@@ -602,7 +596,6 @@ mapping p_one_register_32_mapping : p_inst_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_ONE_REGISTER_32(rs1, rd, p_inst)
   <-> p_one_register_32_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
 
-
 union clause ast = PEXT_PBSAD : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_PBSAD(rs2, rs1, rd, PBSAD) <->
@@ -628,7 +621,7 @@ function clause execute (PEXT_PBSAD(rs2, rs1, rd, op)) = {
     result = result + tmp ;
   };
   result = match op {
-    PBSAD  => result ,
+    PBSAD  => result,
     PBSADA => X(rd) + result
   };
 
@@ -641,11 +634,8 @@ mapping p_inst_pbsad_mapping : p_inst_rs2_rs1_rd_op <-> string = {
   PBSADA  <-> "PBSADA"
 }
 
-
 mapping clause assembly = PEXT_PBSAD(rs2, rs1, rd, p_inst)
   <-> p_inst_pbsad_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
-
-
 
 /* 16-bit pack instructions */
 union clause ast = PEXT_PACK_16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
@@ -664,10 +654,10 @@ function clause execute (PEXT_PACK_16(rs2, rs1, rd, op)) = {
   let rs2_val = X(rs2);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
-    let rs1_bottom =  slice (rs1_val, i, 16);
-    let rs1_top =  slice (rs1_val, i+16, 16);   
-    let rs2_bottom =  slice (rs2_val, i, 16);
-    let rs2_top =  slice (rs2_val, i+16, 16);
+    let rs1_bottom =  slice(rs1_val, i, 16);
+    let rs1_top =  slice(rs1_val, i+16, 16);   
+    let rs2_bottom =  slice(rs2_val, i, 16);
+    let rs2_top =  slice(rs2_val, i+16, 16);
     result[(i + 31)..i] = match op {
       PKBB16 => rs1_bottom @ rs2_bottom,
       PKBT16 => rs1_bottom @ rs2_top,

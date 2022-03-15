@@ -67,14 +67,14 @@ function clause execute (PEXT_ALU8(rs2, rs1, rd, op)) = {
       KSUB8   => ksub(rs1_byte, rs2_byte),
       UKSUB8  => uksub(rs1_byte, rs2_byte),
       CMPEQ8  => cmpeq(rs1_byte, rs2_byte),
-      SCMPLE8  => scmple(rs1_byte, rs2_byte),
-      SCMPLT8  => scmplt(rs1_byte, rs2_byte),
-      UCMPLE8  => ucmple(rs1_byte, rs2_byte),
-      UCMPLT8  => ucmplt(rs1_byte, rs2_byte),
-      SMIN8    => smin(rs1_byte, rs2_byte),
-      SMAX8    => smax(rs1_byte, rs2_byte),
-      UMIN8    => umin(rs1_byte, rs2_byte),
-      UMAX8    => umax(rs1_byte, rs2_byte)
+      SCMPLE8 => scmple(rs1_byte, rs2_byte),
+      SCMPLT8 => scmplt(rs1_byte, rs2_byte),
+      UCMPLE8 => ucmple(rs1_byte, rs2_byte),
+      UCMPLT8 => ucmplt(rs1_byte, rs2_byte),
+      SMIN8   => smin(rs1_byte, rs2_byte),
+      SMAX8   => smax(rs1_byte, rs2_byte),
+      UMIN8   => umin(rs1_byte, rs2_byte),
+      UMAX8   => umax(rs1_byte, rs2_byte)
     };
   };
   X(rd) = result;
@@ -153,14 +153,22 @@ function clause execute (PEXT_MUL8(rs2, rs1, rd, op)) = {
   else {
     result : xlenbits = zeros();
     match op {  
-      SMUL8   => {result = smul(rs1_byte3, rs2_byte3) @ smul(rs1_byte2, rs2_byte2) @
-                 smul(rs1_byte1, rs2_byte1) @ smul(rs1_byte0, rs2_byte0)},
-      SMULX8  => {result = smul(rs1_byte3, rs2_byte2) @ smul(rs1_byte2, rs2_byte3) @
-                 smul(rs1_byte1, rs2_byte0) @ smul(rs1_byte0, rs2_byte1)},
-      UMUL8   => {result = umul(rs1_byte3, rs2_byte3) @ umul(rs1_byte2, rs2_byte2) @
-                 umul(rs1_byte1, rs2_byte1) @ umul(rs1_byte0, rs2_byte0)},
-      UMULX8  => {result= umul(rs1_byte3, rs2_byte2) @ umul(rs1_byte2, rs2_byte3) @
-                 umul(rs1_byte1, rs2_byte0) @ umul(rs1_byte0, rs2_byte1)}
+      SMUL8   => {
+        result = smul(rs1_byte3, rs2_byte3) @ smul(rs1_byte2, rs2_byte2) @
+                 smul(rs1_byte1, rs2_byte1) @ smul(rs1_byte0, rs2_byte0)
+                 },
+      SMULX8  => {
+        result = smul(rs1_byte3, rs2_byte2) @ smul(rs1_byte2, rs2_byte3) @
+                 smul(rs1_byte1, rs2_byte0) @ smul(rs1_byte0, rs2_byte1)
+                 },
+      UMUL8   => {
+        result = umul(rs1_byte3, rs2_byte3) @ umul(rs1_byte2, rs2_byte2) @
+                 umul(rs1_byte1, rs2_byte1) @ umul(rs1_byte0, rs2_byte0)
+                 },
+      UMULX8  => {
+        result= umul(rs1_byte3, rs2_byte2) @ umul(rs1_byte2, rs2_byte3) @
+                 umul(rs1_byte1, rs2_byte0) @ umul(rs1_byte0, rs2_byte1)
+                 }
     }; 
     X(rd) = result;
   };
@@ -197,7 +205,6 @@ mapping clause encdec = PEXT_SHIFT8(rs2, rs1, rd, KSLRA8) <->
 mapping clause encdec = PEXT_SHIFT8(rs2, rs1, rd, KSLRA8_U) <->
   0b0110111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 
-
 function clause execute (PEXT_SHIFT8(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
@@ -213,17 +220,11 @@ function clause execute (PEXT_SHIFT8(rs2, rs1, rd, op)) = {
       KSLL8     => kshift_left_logic(rs1_byte, EXTZ(rs2_val[2..0])),
       KSLRA8     => kslra(rs1_byte, EXTS(rs2_val[3..0])),
       KSLRA8_U   => kslra_u(rs1_byte, EXTS(rs2_val[3..0]))
-
     };
   };
   X(rd) = result;
   RETIRE_SUCCESS
 }
-
-/*
-      KSLRA8     => shift_right_arith(rs1_byte, EXTS(rs2_val[3..0])),
-      KSLRA8_U   => shift_right_arith_u(rs1_byte, EXTS(rs2_val[3..0]))
-*/
 
 mapping p_SHIFT8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     SRA8   <-> "SRA8",
@@ -368,39 +369,57 @@ function clause execute (P_INST_SWAP_UNPACK(rs1, rd, op)) = {
     let rs1_byte1 = slice(rs1_val, i+8, 8);
     let rs1_byte2 = slice(rs1_val, i+16, 8);
     let rs1_byte3 = slice(rs1_val, i+24, 8);
-
     result[(i+31)..i] = match op {
-      SWAP8      =>  rs1_byte2 @ rs1_byte3 @ rs1_byte0 @ rs1_byte1,
-      SUNPKD810  =>  { resultH = EXTS(rs1_byte1); 
-                       resultL = EXTS(rs1_byte0);
-                       resultH @ resultL},
-      SUNPKD820  =>  { resultH = EXTS(rs1_byte2); 
-                     resultL = EXTS(rs1_byte0);
-                     resultH @ resultL },
-      SUNPKD830  =>  { resultH = EXTS(rs1_byte3); 
-                     resultL = EXTS(rs1_byte0);
-                     resultH @ resultL },
-      SUNPKD831  =>  { resultH = EXTS(rs1_byte3); 
-                     resultL = EXTS(rs1_byte1);
-                     resultH @ resultL },
-      SUNPKD832  =>  { resultH = EXTS(rs1_byte3); 
-                     resultL = EXTS(rs1_byte2);
-                     resultH @ resultL },
-      ZUNPKD810  =>  { resultH = EXTZ(rs1_byte1); 
-                     resultL = EXTZ(rs1_byte0);
-                     resultH @ resultL },
-      ZUNPKD820  =>  { resultH = EXTZ(rs1_byte2); 
-                     resultL = EXTZ(rs1_byte0);
-                     resultH @ resultL },
-      ZUNPKD830  =>  { resultH = EXTZ(rs1_byte3); 
-                     resultL = EXTZ(rs1_byte0);
-                     resultH @ resultL },
-      ZUNPKD831  =>  { resultH = EXTZ(rs1_byte3); 
-                     resultL = EXTZ(rs1_byte1);
-                     resultH @ resultL },
-      ZUNPKD832  =>  { resultH = EXTZ(rs1_byte3); 
-                     resultL = EXTZ(rs1_byte2);
-                     resultH @ resultL }
+      SWAP8     => rs1_byte2 @ rs1_byte3 @ rs1_byte0 @ rs1_byte1,
+      SUNPKD810 => {
+        resultH = EXTS(rs1_byte1); 
+        resultL = EXTS(rs1_byte0);
+        resultH @ resultL},
+      SUNPKD820 => {
+        resultH = EXTS(rs1_byte2); 
+        resultL = EXTS(rs1_byte0);
+        resultH @ resultL
+        },
+      SUNPKD830 => { 
+        resultH = EXTS(rs1_byte3); 
+        resultL = EXTS(rs1_byte0);
+        resultH @ resultL
+        },
+      SUNPKD831 => {
+        resultH = EXTS(rs1_byte3); 
+        resultL = EXTS(rs1_byte1);
+        resultH @ resultL
+        },
+      SUNPKD832 => {
+        resultH = EXTS(rs1_byte3); 
+        resultL = EXTS(rs1_byte2);
+        resultH @ resultL
+        },
+      ZUNPKD810 => {
+        resultH = EXTZ(rs1_byte1); 
+        resultL = EXTZ(rs1_byte0);
+        resultH @ resultL
+        },
+      ZUNPKD820 => {
+        resultH = EXTZ(rs1_byte2); 
+        resultL = EXTZ(rs1_byte0);
+        resultH @ resultL
+        },
+      ZUNPKD830 => {
+        resultH = EXTZ(rs1_byte3); 
+        resultL = EXTZ(rs1_byte0);
+        resultH @ resultL
+        },
+      ZUNPKD831 => {
+        resultH = EXTZ(rs1_byte3); 
+        resultL = EXTZ(rs1_byte1);
+        resultH @ resultL
+        },
+      ZUNPKD832 => {
+        resultH = EXTZ(rs1_byte3); 
+        resultL = EXTZ(rs1_byte2);
+        resultH @ resultL
+        }
     }
   };
   X(rd) = result;
