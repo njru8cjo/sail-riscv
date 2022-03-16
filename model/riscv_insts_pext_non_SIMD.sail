@@ -34,9 +34,9 @@ function clause execute (PEXT_Q15(rs2, rs1, rd, op)) = {
         tmp = sub_bits(EXTS(slice(rs1_val,0,32)), EXTS(slice(rs2_val,0,32)));
         EXTS(q15(tmp))
       }, 
-      KHMBB  => EXTS(sshm(slice(rs1_val,0,16), slice(rs2_val,0,16))),
-      KHMBT  => EXTS(sshm(slice(rs1_val,0,16), slice(rs2_val,16,16))),
-      KHMTT  => EXTS(sshm(slice(rs1_val,16,16), slice(rs2_val,16,16))),
+      KHMBB  => EXTS(signed_saturating_mul_16(slice(rs1_val,0,16), slice(rs2_val,0,16))),
+      KHMBT  => EXTS(signed_saturating_mul_16(slice(rs1_val,0,16), slice(rs2_val,16,16))),
+      KHMTT  => EXTS(signed_saturating_mul_16(slice(rs1_val,16,16), slice(rs2_val,16,16))),
       UKADDH => { 
         tmp = add_bits(EXTZ(slice(rs1_val,0,32)), EXTZ(slice(rs2_val,0,32))); 
         EXTS(q15_l_u(tmp))
@@ -222,21 +222,20 @@ function clause execute (PEXT_32_PAIR_RD_COMPUTE(rs2, rs1, rd, op)) = {
   let rs2_val = X(rs2);
   let rs1_word = slice(rs1_val, 0, 32);
   let rs2_word = slice(rs2_val, 0, 32);
-  result : bits(64) = zeros(); 
+  result : bits(64) = zeros();
   result = match op {
-          MULR64  => umul33_64(EXTZ(rs1_word), EXTZ(rs2_word)),
-          MULSR64 => mul32_64(rs1_word, rs2_word)
+      MULR64  => umul(rs1_word, rs2_word),
+      MULSR64 => smul(rs1_word, rs2_word)
     };
 
   if sizeof(xlen) == 32
   then {
-      let rd0 = (rd >> 1) << 1 ;
-      let rd1 = rd0 + 1 ;
-      X(rd0) = result[31..0]; 
-      X(rd1) = result[63..32];
+    let rd0 = (rd >> 1) << 1;
+    let rd1 = rd0 + 1;
+    X(rd0) = result[31..0]; 
+    X(rd1) = result[63..32];
   }
-  else X(rd) = result;  
-
+  else X(rd) = result;
   RETIRE_SUCCESS
 }
 
