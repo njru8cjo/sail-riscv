@@ -2,22 +2,64 @@
 /* Academia Sinica, Taiwan*/
 /* Andes Technology Corporation*/
 
+/* PEXT_PACK_16 AST */
+union clause ast = PEXT_PACK_16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
+
+mapping clause encdec = PEXT_PACK_16(rs2, rs1, rd, PKBB16) <->
+  0b0000111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_PACK_16(rs2, rs1, rd, PKBT16) <->
+  0b0001111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_PACK_16(rs2, rs1, rd, PKTT16) <->
+  0b0010111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+mapping clause encdec = PEXT_PACK_16(rs2, rs1, rd, PKTB16) <->
+  0b0011111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
+
+function clause execute (PEXT_PACK_16(rs2, rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  let rs2_val = X(rs2);
+  result : xlenbits = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
+    let rs1_word_bottom =  slice(rs1_val, i, 16);
+    let rs1_word_top =  slice(rs1_val, i+16, 16);   
+    let rs2_word_bottom =  slice(rs2_val, i, 16);
+    let rs2_word_top =  slice(rs2_val, i+16, 16);
+    result[(i + 31)..i] = match op {
+      PKBB16 => rs1_word_bottom @ rs2_word_bottom,
+      PKBT16 => rs1_word_bottom @ rs2_word_top,
+      PKTB16 => rs1_word_top @ rs2_word_bottom,
+      PKTT16 => rs1_word_top @ rs2_word_top
+    };
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+}
+
+mapping p_pack_16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
+    PKBB16 <-> "PKBB16",
+    PKTB16 <-> "PKTB16",
+    PKBT16 <-> "PKBT16",
+    PKTT16 <-> "PKTT16"
+}
+
+mapping clause assembly = PEXT_PACK_16(rs2, rs1, rd, p_inst)
+  <-> p_pack_16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+
 /* PEXT_32_32_MUL_ADD AST */
 union clause ast = PEXT_32_32_MUL_ADD : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
-mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, SMMUL) <->
+mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, SMMUL)    <->
   0b0100000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, SMMUL_U) <->
+mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, SMMUL_U)  <->
   0b0101000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KMMAC) <->
+mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KMMAC)    <->
   0b0110000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KMMAC_U) <->
+mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KMMAC_U)  <->
   0b0111000 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KMMSB) <->
+mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KMMSB)    <->
   0b0100001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KMMSB_U) <->
+mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KMMSB_U)  <->
   0b0101001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KWMMUL) <->
+mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KWMMUL)   <->
   0b0110001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KWMMUL_U) <->
   0b0111001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
@@ -63,35 +105,35 @@ mapping clause assembly = PEXT_32_32_MUL_ADD(rs2, rs1, rd, p_inst)
 /* PEXT_32_16_MUL_ADD AST */
 union clause ast = PEXT_32_16_MUL_ADD : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, SMMWB) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, SMMWB)     <->
   0b0100010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, SMMWB_U) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, SMMWB_U)   <->
   0b0101010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, SMMWT) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, SMMWT)     <->
   0b0110010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, SMMWT_U) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, SMMWT_U)   <->
   0b0111010 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWB) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWB)    <->
   0b0100011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWB_U) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWB_U)  <->
   0b0101011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT)    <->
   0b0110011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT_U) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT_U)  <->
   0b0111011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMWB2) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMWB2)    <->
   0b1000111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMWB2_U) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMWB2_U)  <->
   0b1001111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMWT2) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMWT2)    <->
   0b1010111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMWT2_U) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMWT2_U)  <->
   0b1011111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWB2) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWB2)   <->
   0b1100111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWB2_U) <->
   0b1101111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT2) <->
+mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT2)   <->
   0b1110111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT2_U) <->
   0b1111111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
@@ -159,33 +201,33 @@ mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, SMBT16) <->
   0b0001100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, SMTT16) <->
   0b0010100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMDA) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMDA)   <->
   0b0011100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMXDA) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMXDA)  <->
   0b0011101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, SMDS) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, SMDS)   <->
   0b0101100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, SMDRS) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, SMDRS)  <->
   0b0110100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, SMXDS) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, SMXDS)  <->
   0b0111100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMABB) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMABB)  <->
   0b0101101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMABT) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMABT)  <->
   0b0110101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMATT) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMATT)  <->
   0b0111101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMADA) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMADA)  <->
   0b0100100 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMAXDA) <->
   0b0100101 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMADS) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMADS)  <->
   0b0101110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMADRS) <->
   0b0110110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMAXDS) <->
   0b0111110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMSDA) <->
+mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMSDA)  <->
   0b0100110 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMSXDA) <->
   0b0100111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
@@ -328,9 +370,9 @@ union clause ast = PEXT_ONE_REGISTER_32 : (regidx, regidx, p_inst_rs1_rd_op)
 
 mapping clause encdec = PEXT_ONE_REGISTER_32(rs1, rd, CLRS32) <->
   0b1010111 @ 0b11000 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_ONE_REGISTER_32(rs1, rd, CLO32) <->
+mapping clause encdec = PEXT_ONE_REGISTER_32(rs1, rd, CLO32)  <->
   0b1010111 @ 0b11011 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_ONE_REGISTER_32(rs1, rd, CLZ32) <->
+mapping clause encdec = PEXT_ONE_REGISTER_32(rs1, rd, CLZ32)  <->
   0b1010111 @ 0b11001 @ rs1 @ 0b000 @ rd @ 0b1110111
 
 function clause execute (PEXT_ONE_REGISTER_32(rs1, rd, op)) = {
@@ -360,7 +402,7 @@ mapping clause assembly = PEXT_ONE_REGISTER_32(rs1, rd, p_inst)
 /* PEXT_PBSAD AST */
 union clause ast = PEXT_PBSAD : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
-mapping clause encdec = PEXT_PBSAD(rs2, rs1, rd, PBSAD) <->
+mapping clause encdec = PEXT_PBSAD(rs2, rs1, rd, PBSAD)  <->
   0b1111110 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 mapping clause encdec = PEXT_PBSAD(rs2, rs1, rd, PBSADA) <->
   0b1111111 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
@@ -397,48 +439,6 @@ mapping p_inst_pbsad_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 
 mapping clause assembly = PEXT_PBSAD(rs2, rs1, rd, p_inst)
   <-> p_inst_pbsad_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
-
-/* PEXT_PACK_16 AST */
-union clause ast = PEXT_PACK_16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
-
-mapping clause encdec = PEXT_PACK_16(rs2, rs1, rd, PKBB16) <->
-  0b0000111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_PACK_16(rs2, rs1, rd, PKBT16) <->
-  0b0001111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_PACK_16(rs2, rs1, rd, PKTT16) <->
-  0b0010111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-mapping clause encdec = PEXT_PACK_16(rs2, rs1, rd, PKTB16) <->
-  0b0011111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
-
-function clause execute (PEXT_PACK_16(rs2, rs1, rd, op)) = {
-  let rs1_val = X(rs1);
-  let rs2_val = X(rs2);
-  result : xlenbits = zeros();
-  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
-    let rs1_bottom =  slice(rs1_val, i, 16);
-    let rs1_top =  slice(rs1_val, i+16, 16);   
-    let rs2_bottom =  slice(rs2_val, i, 16);
-    let rs2_top =  slice(rs2_val, i+16, 16);
-    result[(i + 31)..i] = match op {
-      PKBB16 => rs1_bottom @ rs2_bottom,
-      PKBT16 => rs1_bottom @ rs2_top,
-      PKTB16 => rs1_top @ rs2_bottom,
-      PKTT16 => rs1_top @ rs2_top
-    };
-  };
-  X(rd) = result;
-  RETIRE_SUCCESS
-}
-
-mapping p_pack_16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
-    PKBB16 <-> "PKBB16",
-    PKTB16 <-> "PKTB16",
-    PKBT16 <-> "PKBT16",
-    PKTT16 <-> "PKTT16"
-}
-
-mapping clause assembly = PEXT_PACK_16(rs2, rs1, rd, p_inst)
-  <-> p_pack_16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
 /* PEXT_SMAL AST */
 union clause ast = PEXT_SMAL : (regidx, regidx, regidx)
