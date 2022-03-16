@@ -1,6 +1,8 @@
-/* 
-16-bit ALU & COMPARE Instructions
-*/
+/* Programming Langauge Lab, Department of Computer Science, National Tsing-Hua University, Taiwan */
+/* Academia Sinica, Taiwan*/
+/* Andes Technology Corporation*/
+
+/* PEXT_ALU_CMP_16 AST */
 
 union clause ast = PEXT_ALU_CMP_16  : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
@@ -85,29 +87,15 @@ function clause execute (PEXT_ALU_CMP_16 (rs2, rs1, rd, op)) = {
       SRA16_U   => shift_right_arith_u(rs1_half, 0x0 @ X(rs2)[3..0]),
       SRL16     => shift_right_logic(rs1_half, 0x0 @ X(rs2)[3..0]),
       SRL16_U   => shift_right_logic_u(rs1_half, 0x0 @ X(rs2)[3..0]),
-      CMPEQ16   => if   rs1_half == rs2_half 
-                   then 0xFFFF 
-                   else 0x0000,
-      SCMPLT16  => if   signed(rs1_half) < signed(rs2_half)
-                   then 0xFFFF
-                   else 0x0000,
-      SCMPLE16  => if   signed(rs1_half) <= signed(rs2_half)
-                   then 0xFFFF
-                   else 0x0000,
-      UCMPLT16  => if   unsigned(rs1_half) < unsigned(rs2_half)
-                   then 0xFFFF
-                   else 0x0000,
-      UCMPLE16  => if   unsigned(rs1_half) <= unsigned(rs2_half)
-                   then 0xFFFF
-                   else 0x0000,
-      SMAX16    => if   rs2_half <_s rs1_half then rs1_half
-                   else rs2_half,
-      SMIN16    => if   rs1_half <_s rs2_half then rs1_half
-                   else rs2_half,
-      UMAX16    => if   rs2_half <_u rs1_half then rs1_half
-                   else rs2_half,
-      UMIN16    => if   rs1_half <_u rs2_half then rs1_half
-                   else rs2_half
+      CMPEQ16   => cmpeq(rs1_half, rs2_half), 
+      SCMPLT16  => scmplt(rs1_half, rs2_half),
+      SCMPLE16  => scmple(rs1_half, rs2_half),
+      UCMPLT16  => ucmplt(rs1_half, rs2_half),
+      UCMPLE16  => ucmple(rs1_half, rs2_half),
+      SMAX16    => smax(rs1_half, rs2_half),
+      SMIN16    => smix(rs1_half, rs2_half),
+      UMAX16    => umax(rs1_half, rs2_half),
+      UMIN16    => umin(rs1_half, rs2_half)
     };
   };
   X(rd) = result;
@@ -147,9 +135,7 @@ mapping p_ALU16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_ALU_CMP_16 (rs2, rs1, rd, p_inst)
   <-> p_ALU16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/*
- 16bit Cross Instruction
-*/
+/* PEXT_CROSS_16 AST */
 union clause ast = PEXT_CROSS_16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_CROSS_16(rs2, rs1, rd, CRAS16) <->
@@ -263,10 +249,7 @@ mapping p_CROSS_16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_CROSS_16(rs2, rs1, rd, p_inst)
   <-> p_CROSS_16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/*
-16bit MUL Instruction
-KHM & KHMX write in CROSS AST 
-*/
+/* PEXT_MUL_16 */
 
 union clause ast = PEXT_MUL_16 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
@@ -338,7 +321,7 @@ mapping p_MUL_16_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_MUL_16(rs2, rs1, rd, p_inst)
   <-> p_MUL_16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/* 16 bits One Register Instructions */
+/* PEXT_ONE_REGISTER_16 AST */
 union clause ast = PEXT_ONE_REGISTER_16  : (regidx, regidx, p_inst_rs1_rd_op)
 
 mapping clause encdec = PEXT_ONE_REGISTER_16 (rs1, rd, CLRS16) <->
@@ -377,9 +360,7 @@ mapping clause assembly = PEXT_ONE_REGISTER_16 (rs1, rd, p_inst)
   <-> p_inst_rs1_rd_16_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
 
 
-/*
-  4 bit Immediate Instruction
-*/
+/* PEXT_IMM4 AST */
 union clause ast = PEXT_IMM4  : (bits(4), regidx, regidx, p_inst_imm4_rs1_rd_op)
 
 mapping clause encdec = PEXT_IMM4 (imm4, rs1, rd, KSLLI16) <->
@@ -434,7 +415,7 @@ mapping p_inst_imm4_rs1_rd_mapping : p_inst_imm4_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_IMM4 (imm4, rs1, rd, p_inst)
   <-> p_inst_imm4_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_4(imm4)
 
-/* 8 bit ALU & COMPARE Instruction*/
+/* PEXT_ALU_CMP_8 AST */
 union clause ast = PEXT_ALU_CMP_8 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_ALU_CMP_8(rs2, rs1, rd, ADD8) <->
@@ -566,19 +547,19 @@ mapping p_ALU8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_ALU_CMP_8(rs2, rs1, rd, p_inst)
   <-> p_ALU8_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/* 8bits mul instruction */
-union clause ast = PEXT_MUL8 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
+/* PEXT_MUL_8 AST */
+union clause ast = PEXT_MUL_8 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
-mapping clause encdec = PEXT_MUL8(rs2, rs1, rd, SMUL8)  <->
+mapping clause encdec = PEXT_MUL_8(rs2, rs1, rd, SMUL8)  <->
   0b1010100 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_MUL8(rs2, rs1, rd, SMULX8) <->
+mapping clause encdec = PEXT_MUL_8(rs2, rs1, rd, SMULX8) <->
   0b1010101 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_MUL8(rs2, rs1, rd, UMUL8)  <->
+mapping clause encdec = PEXT_MUL_8(rs2, rs1, rd, UMUL8)  <->
   0b1011100 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
-mapping clause encdec = PEXT_MUL8(rs2, rs1, rd, UMULX8) <->
+mapping clause encdec = PEXT_MUL_8(rs2, rs1, rd, UMULX8) <->
   0b1011101 @ rs2 @ rs1 @ 0b000 @ rd @ 0b1110111
 
-function clause execute (PEXT_MUL8(rs2, rs1, rd, op)) = {
+function clause execute (PEXT_MUL_8(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
   let rs1_byte0 = slice(rs1_val, 0, 8);
@@ -648,10 +629,10 @@ mapping p_MUL8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     UMULX8 <-> "UMULX8"
 }
 
-mapping clause assembly = PEXT_MUL8(rs2, rs1, rd, p_inst)
+mapping clause assembly = PEXT_MUL_8(rs2, rs1, rd, p_inst)
   <-> p_MUL8_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/* 8bits one register instructions */
+/* PEXT_ONE_REGISTER_8 AST */
 union clause ast = PEXT_ONE_REGISTER_8 : (regidx, regidx, p_inst_rs1_rd_op)
 
 mapping clause encdec = PEXT_ONE_REGISTER_8(rs1, rd, CLRS8) <->
@@ -690,7 +671,7 @@ mapping clause assembly = PEXT_ONE_REGISTER_8(rs1, rd, p_inst)
   <-> p_inst_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
 
 
-/* 8bits KHM and KHMX instructions */
+/* PEXT_KHM_8 AST */
 union clause ast = PEXT_KHM_8 : (regidx, regidx, regidx, p_inst_rs2_rs1_rd_op)
 
 mapping clause encdec = PEXT_KHM_8(rs2, rs1, rd, KHM8) <->
@@ -724,7 +705,7 @@ mapping p_khm_8_mapping : p_inst_rs2_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_KHM_8(rs2, rs1, rd, p_inst)
   <-> p_khm_8_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
-/* 8bits imm3 instructions */
+/* PEXT_IMM3 AST */
 union clause ast = PEXT_IMM3 : (bits(3), regidx, regidx, p_inst_imm3_rs1_rd_op)
 
 mapping clause encdec = PEXT_IMM3(imm3, rs1, rd, KSLLI8) <->
@@ -779,7 +760,7 @@ mapping p_inst_imm3_rs1_rd_mapping : p_inst_imm3_rs1_rd_op <-> string = {
 mapping clause assembly = PEXT_IMM3(imm3, rs1, rd, p_inst)
   <-> p_inst_imm3_rs1_rd_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1) ^ sep() ^ hex_bits_3(imm3)
 
-/* 8bits swap and unpack instructions */
+/* PEXT_UNPACK_SWAP AST */
 union clause ast = PEXT_UNPACK_SWAP : (regidx, regidx, p_inst_rs1_rd_op)
 
 mapping clause encdec = PEXT_UNPACK_SWAP(rs1, rd, SUNPKD810) <->
@@ -888,3 +869,4 @@ mapping p_inst_swap_unpack_mapping : p_inst_rs1_rd_op <-> string = {
 
 mapping clause assembly = PEXT_UNPACK_SWAP(rs1, rd, p_inst)
   <-> p_inst_swap_unpack_mapping(p_inst) ^ spc() ^ reg_name(rd) ^ sep() ^ reg_name(rs1)
+  
