@@ -261,6 +261,30 @@ mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, MADDR32) <->
 mapping clause encdec = PEXT_NONSIMD_MISC(rs2, rs1, rd, MSUBR32) <->
   0b1100011 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
+/* bit reverse auxiliary functions */
+val bitrev32 :
+  (bits(32)) -> bits(32)
+function bitrev32 (v) = {
+  var tmp : bits(64) = 0x0000 @ v @ 0x0000;
+  tmp = 0x0000 @ ((tmp[48..17] & 0x55555555) | (tmp[46..15] & 0xAAAAAAAA)) @ 0x0000;
+  tmp = 0x0000 @ ((tmp[49..18] & 0x33333333) | (tmp[45..14] & 0xCCCCCCCC)) @ 0x0000;
+  tmp = 0x0000 @ ((tmp[51..20] & 0x0F0F0F0F) | (tmp[43..12] & 0xF0F0F0F0)) @ 0x0000;
+  tmp = 0x0000 @ ((tmp[55..24] & 0x00FF00FF) | (tmp[39..8]  & 0xFF00FF00)) @ 0x0000;
+  ((tmp[63..32] & 0x0000FFFF) | (tmp[31..0]  & 0xFFFF0000))
+}
+
+val bitrev64 :
+  (bits(64)) -> bits(64)
+function bitrev64 (v) = {
+  var tmp : bits(128) = 0x00000000 @ v @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[96..33]  & 0x5555555555555555) | (tmp[94..31] & 0xAAAAAAAAAAAAAAAA)) @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[97..34]  & 0x3333333333333333) | (tmp[93..30] & 0xCCCCCCCCCCCCCCCC)) @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[99..36]  & 0x0F0F0F0F0F0F0F0F) | (tmp[91..28] & 0xF0F0F0F0F0F0F0F0)) @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[103..40] & 0x00FF00FF00FF00FF) | (tmp[87..24] & 0xFF00FF00FF00FF00)) @ 0x00000000;
+  tmp = 0x00000000 @ ((tmp[111..48] & 0x0000FFFF0000FFFF) | (tmp[79..16] & 0xFFFF0000FFFF0000)) @ 0x00000000;
+  ((tmp[127..64] & 0x00000000FFFFFFFF) | (tmp[63..0]  & 0xFFFFFFFF00000000))
+}
+
 function clause execute (PEXT_NONSIMD_MISC(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);

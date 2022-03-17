@@ -64,6 +64,71 @@ mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KWMMUL)   <->
 mapping clause encdec = PEXT_32_32_MUL_ADD(rs2, rs1, rd, KWMMUL_U) <->
   0b0111001 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
+/* SIMD MSW Signed Multiply Word */
+val msb_smul :
+  (bits(32), bits(32)) -> bits(32)
+function msb_smul (v1, v2) =
+  to_bits (64, signed(v1) * signed(v2))[63..32]
+
+val msb_smul_u :
+  (bits(32), bits(32)) -> bits(32)
+function msb_smul_u (v1, v2) =
+  add_bits(to_bits (64, signed(v1) * signed(v2))[63..31] , 0x00000000 @ 0b1)[32..1]
+
+/* Most Significant Word mul add/sub auxiliary function */
+
+
+function clause execute (PEXT_32_32_MUL_ADD(rs2, rs1, rd, op)) = {
+  let rs1_val = X(rs1);
+  let rs2_val = X(rs2);
+  let rd_val  = X(rd);
+  result : xlenbits = zeros();
+  foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
+    let rs1_word =  slice(rs1_val, i, 32);
+    let rs2_word =  slice(rs2_val, i, 32);
+    let rd_word  =  slice(rd_val, i, 32);
+    result[(i+31)..i] = match op {
+      SMMUL    => msb_smul(rs1_word, rs2_word),
+      SMMUL_U  => msb_smul_u(rs1_word, rs2_word),
+      KMMAC    => {
+        let res : bits(33) = add_bits(EXTS(msb_smul(rs1_word, rs2_word)), EXTS(rd_word));
+        q31(res)
+      },
+      KMMAC_U  => {
+        let res : bits(33) = add_bits(EXTS(msb_smul_u(rs1_word, rs2_word)), EXTS(rd_word));
+        q31(res)
+      },
+      KMMSB    => {
+        let res : bits(33) = sub_bits(EXTS(rd_word), EXTS(msb_smul(rs1_word, rs2_word)));
+        q31(res)
+      },
+      KMMSB_U  => {
+        let res : bits(33) = sub_bits(EXTS(rd_word), EXTS(msb_smul_u(rs1_word, rs2_word)));
+        q31(res)
+      },
+      KWMMUL   => {
+        if (rs1_word != 0x80000000) | (rs2_word != 0x80000000)
+        then smul(rs1_word, rs2_word)[62..31]
+        else { pext_write_OV (0b1); 0x7FFFFFFF }
+      },
+      KWMMUL_U => {
+        if (rs1_word != 0x80000000) | (rs2_word != 0x80000000)
+        then {
+        let mres : bits(64) = smul(rs1_word, rs2_word);
+        let round33 : bits(34) = add_bits(mres[63..30], EXTZ(0x1));
+        round33[32..1]
+        } else { 
+          pext_write_OV (0b1); 
+          0x7FFFFFFF 
+        }
+      }
+    };
+  };
+  X(rd) = result;
+  RETIRE_SUCCESS
+}
+
+/*
 function clause execute (PEXT_32_32_MUL_ADD(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
@@ -87,6 +152,7 @@ function clause execute (PEXT_32_32_MUL_ADD(rs2, rs1, rd, op)) = {
   X(rd) = result;
   RETIRE_SUCCESS
 }
+*/
 
 mapping p_32_32_mul_add_mapping : p_inst_rs2_rs1_rd_op <-> string = {
     SMMUL    <-> "SMMUL",
@@ -138,6 +204,71 @@ mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT2)   <->
 mapping clause encdec = PEXT_32_16_MUL_ADD(rs2, rs1, rd, KMMAWT2_U) <->
   0b1111111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
+/* SIMD Most Significant Word Signed Multiply Word and Bottom Half */
+val smmw :
+  (bits(32), bits(16)) -> bits(32)
+function smmw (v1, v2) =
+  to_bits (48, signed(v1) * signed(v2))[47..16]
+
+val smmw_u :
+  (bits(32), bits(16)) -> bits(32)
+function smmw_u (v1, v2) =
+  add_bits(to_bits (48, signed(v1) * signed(v2))[47..15] , EXTZ(0x1))[32..1]
+
+val kmmaw :
+  (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
+function kmmaw (v1, v2, rd) = {
+  let mres : bits(48) = to_bits(48, signed(v1) * signed(v2));
+  let res : bits(33) = add_bits(EXTS(rd), EXTS(mres[47..16]));
+  q31(res)
+}
+val kmmaw_u :
+  (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
+function kmmaw_u (v1, v2, rd) = {
+  let mres : bits(48) = to_bits(48, signed(v1) * signed(v2));
+  let round33 : bits(33) = add_bits(mres[47..15], EXTS(0x1));
+  let res : bits(33) = add_bits(EXTS(rd), EXTS(round33[32..1]));
+  q31(res)
+}
+val kmmaw2 :
+  (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
+function kmmaw2 (v1, v2, rd) = {
+  let addop : bits(32) =
+  if (v1 != 0x80000000) | (v2 != 0x8000)
+  then to_bits(48, signed(v1) * signed(v2))[46..15]
+  else {pext_write_OV (0b1); 0x7FFFFFFF};
+  let res : bits(33) = add_bits(EXTS(rd), EXTS(addop));
+  q31(res)
+}
+val kmmaw2_u :
+  (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
+function kmmaw2_u (v1, v2, rd) = {
+  let round34 : bits(34) = add_bits(to_bits(48, signed(v1) * signed(v2))[47..14], EXTS(0x1));
+  let addop : bits(32) =
+  if (v1 != 0x80000000) | (v2 != 0x8000)
+  then round34[32..1]
+  else {pext_write_OV (0b1); 0x7FFFFFFF};
+  let res : bits(33) = add_bits(EXTS(rd), EXTS(addop));
+  q31(res)
+}
+val kmmw2 :
+  (bits(32), bits(16)) -> bits(32) effect {rreg,wreg}
+function kmmw2 (v1, v2) = {
+  if (v1 == 0x80000000) & (v2 == 0x8000)
+  then { pext_write_OV (0b1); 0x7FFFFFFF }
+  else to_bits(48, signed(v1) * signed(v2))[46..15]
+}
+val kmmw2_u :
+  (bits(32), bits(16)) -> bits(32) effect {rreg,wreg}
+function kmmw2_u (v1, v2) = {
+  if (v1 == 0x80000000) & (v2 == 0x8000)
+  then { pext_write_OV (0b1); 0x7FFFFFFF }
+  else {
+  let round : bits(33) = add_bits( to_bits(48, signed(v1) * signed(v2))[46..14], EXTS(0x1));
+  round[32..1]
+  }
+  
+}
 function clause execute (PEXT_32_16_MUL_ADD(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
   let rs2_val = X(rs2);
@@ -300,7 +431,7 @@ mapping clause encdec = PEXT_MISC_32(imm5, rs1, rd, UCLIP32) <->
 
 function clause execute (PEXT_MISC_32(imm5, rs1, rd, op)) = {
   let rs1_val = X(rs1);
-  let u_imm5 : byte = EXTZ(imm5);
+  let u_imm5 : bits(8) = EXTZ(imm5);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
     let rs1_word = slice(rs1_val, i, 32);

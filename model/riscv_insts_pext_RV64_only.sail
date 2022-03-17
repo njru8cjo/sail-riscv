@@ -322,7 +322,7 @@ mapping clause encdec = PEXT_64ONLY_IMM5(imm5, rs1, rd, SRLI32_U) <->
 
 function clause execute (PEXT_64ONLY_IMM5(imm5, rs1, rd, op)) = {
   let rs1_val = X(rs1);
-  let sa : byte = EXTZ(imm5);
+  let sa : bits(8) = EXTZ(imm5);
   result : bits(64) = zeros();
   foreach (i from 0 to (sizeof(xlen) - 32) by 32) {
     let rs1_word = slice(rs1_val, i, 32);
@@ -359,7 +359,7 @@ mapping clause encdec = PEXT_64ONLY_SRAIW_U(imm5, rs1, rd) <->
 
 function clause execute (PEXT_64ONLY_SRAIW_U(imm5, rs1, rd)) = {
   let rs1_word_bottom = slice(X(rs1), 0, 32);
-  let sa : byte = EXTZ(imm5);
+  let sa : bits(8) = EXTZ(imm5);
   X(rd) = EXTS(shift_right_arith_u(rs1_word_bottom, sa));
   RETIRE_SUCCESS
 }

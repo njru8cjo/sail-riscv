@@ -2,6 +2,7 @@
 /* Academia Sinica, Taiwan*/
 /* Andes Technology Corporation*/
 
+
 /* *****************************************************************/
 /* ********************* auxiliary functions ***********************/
 /* *****************************************************************/
@@ -10,25 +11,25 @@
 val radd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function radd (v1, v2) =
-  let v1ext : bits(66) = EXTS(v1);
-  let v2ext : bits(66) = EXTS(v2);
+  let v1ext : bits(66) = EXTS(v1) in
+  let v2ext : bits(66) = EXTS(v2) in
   slice ((v1ext + v2ext) >> 1, 0, 'n)
 
 val uradd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function uradd (v1, v2) =
-  let v1ext : bits(66) = EXTZ(v1);
-  let v2ext : bits(66) = EXTZ(v2);
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
   slice ((v1ext + v2ext) >> 1, 0, 'n)
 
 val kadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function kadd (v1, v2) =
-  let ub : bits(66) = EXTS(sail_ones ('n) >> 1);
-  let lb : bits(66) = not_vec (ub);
-  let v1ext : bits(66) = EXTS(v1);
-  let v2ext : bits(66) = EXTS(v2);
-  let sumext = v1ext + v2ext;
+  let ub : bits(66) = EXTS(sail_ones ('n) >> 1) in
+  let lb : bits(66) = not_vec (ub) in
+  let v1ext : bits(66) = EXTS(v1) in
+  let v2ext : bits(66) = EXTS(v2) in
+  let sumext = v1ext + v2ext in
   if sumext <_s lb then { pext_write_OV (0b1); not_vec (ones ('n) >> 1) }
   else if ub <_s sumext then { pext_write_OV (0b1); ones ('n) >> 1 }
   else { slice (sumext, 0, 'n) }
@@ -36,10 +37,10 @@ function kadd (v1, v2) =
 val ukadd : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function ukadd (v1, v2) =
-  let ub : bits(66) = EXTZ(sail_ones ('n));
-  let v1ext : bits(66) = EXTZ(v1);
-  let v2ext : bits(66) = EXTZ(v2);
-  let sumext = v1ext + v2ext;
+  let ub : bits(66) = EXTZ(sail_ones ('n)) in
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
+  let sumext = v1ext + v2ext in
   if ub <_u sumext then { pext_write_OV (0b1); ones('n) }
   else { slice (sumext, 0, 'n) }
 
@@ -47,25 +48,25 @@ function ukadd (v1, v2) =
 val rsub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function rsub (v1, v2) =
-  let v1ext : bits(66) = EXTS(v1);
-  let v2ext : bits(66) = EXTS(v2);
+  let v1ext : bits(66) = EXTS(v1) in
+  let v2ext : bits(66) = EXTS(v2) in
   slice ((v1ext - v2ext) >> 1, 0, 'n)
 
 val ursub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n)
 function ursub (v1, v2) =
-  let v1ext : bits(66) = EXTZ(v1);
-  let v2ext : bits(66) = EXTZ(v2);
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
   slice ((v1ext - v2ext) >> 1, 0, 'n)
 
 val ksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function ksub (v1, v2) =
-  let ub : bits(66) = EXTS(sail_ones ('n) >> 1);
-  let lb : bits(66) = not_vec (ub);
-  let v1ext : bits(66) = EXTS(v1);
-  let v2ext : bits(66) = EXTS(v2);
-  let diffext = v1ext - v2ext;
+  let ub : bits(66) = EXTS(sail_ones ('n) >> 1) in
+  let lb : bits(66) = not_vec (ub) in
+  let v1ext : bits(66) = EXTS(v1) in
+  let v2ext : bits(66) = EXTS(v2) in
+  let diffext = v1ext - v2ext in
   if diffext <_s lb then { pext_write_OV (0b1); not_vec (ones ('n) >> 1) }
   else if ub <_s diffext then { pext_write_OV (0b1); ones ('n) >> 1 }
   else { slice (diffext, 0, 'n) }
@@ -74,10 +75,10 @@ function ksub (v1, v2) =
 val uksub : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function uksub (v1, v2) =
-  let ub : bits(66) = EXTZ(sail_ones ('n));
-  let v1ext : bits(66) = EXTZ(v1);
-  let v2ext : bits(66) = EXTZ(v2);
-  let diffext = v1ext - v2ext;
+  let ub : bits(66) = EXTZ(sail_ones ('n)) in
+  let v1ext : bits(66) = EXTZ(v1) in
+  let v2ext : bits(66) = EXTZ(v2) in
+  let diffext = v1ext - v2ext in
   if ub <_u diffext then { pext_write_OV (0b1); zeros('n) }
   else { slice (diffext, 0, 'n) }
 
@@ -95,40 +96,31 @@ function umul (v1, v2) =
 val khm : forall 'n, 'n == 8 | 'n == 16.
   (bits('n), bits('n)) -> bits('n) effect {rreg,wreg}
 function khm (v1, v2) =
-  let lb : bits('n) = not_vec(EXTS(sail_ones ('n) >> 1));
-  if v1 == lb & v2 == lb then {pext_write_OV (0b1); ones ('n) >> 1}
+  let lb : bits('n) = not_vec(EXTS(sail_ones ('n) >> 1)) in
+  if v1 == lb & v2 == lb then { pext_write_OV (0b1); ones ('n) >> 1 }
   else { if 'n == 8 then { to_bits (2 * 'n, signed(v1) * signed(v2))[14..7] }
-    else { to_bits (2 * 'n, signed(v1) * signed(v2))[30..15] } }
+         else { to_bits (2 * 'n, signed(v1) * signed(v2))[30..15] } }
 
-/* SIMD MSW Signed Multiply Word */
-val msb_smul :
-  (bits(32), bits(32)) -> bits(32)
-function msb_smul (v1, v2) =
-  to_bits (64, signed(v1) * signed(v2))[63..32]
 
-val msb_smul_u :
-  (bits(32), bits(32)) -> bits(32)
-function msb_smul_u (v1, v2) =
-  add_bits(to_bits (64, signed(v1) * signed(v2))[63..31] , 0x00000000 @ 0b1)[32..1]
 
 /* shift auxiliary functions */ 
-val shift_right_arith : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
+val shift_right_arith : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 |'n == 64.
   (bits ('n), bits(8)) -> bits ('n)
 function shift_right_arith (v, m) =
-  let extv : bits(xlen + 65) = EXTS (v);
+  let extv : bits(xlen + 65) = EXTS (v) in
   slice (extv >> m, 0, 'n)
 
 val shift_right_arith_u : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits ('n), bits(8)) -> bits ('n)
 function shift_right_arith_u (v, m) =
   if m == 0x00 then v
-  else let res : bits(65) = add_bits(EXTS(shift_right_arith(v, m - 0x01)), EXTZ(0b1));
+  else let res : bits(65) = add_bits(EXTS(shift_right_arith(v, m - 0x01)), EXTZ(0b1)) in
   slice(res >> 1, 0, 'n)
 
 val shift_right_logic : forall 'n, 'n == 8 | 'n == 16 | 'n == 32 | 'n == 64.
   (bits ('n), bits(8)) -> bits ('n)
 function shift_right_logic (v, m) =
-  let extv : bits(xlen + 65) = EXTZ (v);
+  let extv : bits(xlen + 65) = EXTZ (v) in
   slice (extv >> m, 0, 'n)
 
 val shift_right_logic_u : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
@@ -140,16 +132,16 @@ function shift_right_logic_u (v, m) =
 val shift_left_logic : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits ('n), bits(8)) -> bits ('n)
 function shift_left_logic (v, m) =
-  let extv : bits(xlen + 32) = EXTZ (v);
+  let extv : bits(xlen + 32) = EXTZ (v) in
   slice (extv << m, 0, 'n)
 
 val kshift_left_logic : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits ('n), bits(8)) -> bits ('n) effect {rreg,wreg}
 function kshift_left_logic (v, m) =
-  let ub : bits(xlen + 32) = EXTS(sail_ones ('n) >> 1);
-  let lb : bits(xlen + 32) = not_vec (ub);
-  let vext : bits(xlen + 32) = EXTS(v);
-  let shiftext : bits(xlen + 32) = vext << m;
+  let ub : bits(xlen + 32) = EXTS(sail_ones ('n) >> 1) in
+  let lb : bits(xlen + 32) = not_vec (ub) in
+  let vext : bits(xlen + 32) = EXTS(v) in
+  let shiftext : bits(xlen + 32) = vext << m in
   if shiftext <_s lb then { pext_write_OV (0b1); not_vec (ones ('n) >> 1) }
   else if ub <_s shiftext then { pext_write_OV (0b1); ones ('n) >> 1 }
   else { slice (shiftext, 0, 'n) }
@@ -157,16 +149,16 @@ function kshift_left_logic (v, m) =
 val kslra : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits ('n), bits(8)) -> bits ('n) effect {rreg,wreg}
 function kslra (v, m) =
-  let rev : bits(8) = if m <_s 0x00 then not_vec (m) + 0x01 else m;
-  let sa : bits(8) = if rev == to_bits(8, 'n) then to_bits(8, 'n) - 0x01 else rev;
+  let rev : bits(8) = if m <_s 0x00 then not_vec (m) + 0x01 else m in
+  let sa : bits(8) = if rev == to_bits(8, 'n) then to_bits(8, 'n) - 0x01 else rev in
   if m <_s 0x00 then shift_right_arith(v, sa)
   else kshift_left_logic(v, sa)
 
 val kslra_u : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits ('n), bits(8)) -> bits ('n) effect {rreg,wreg}
 function kslra_u (v, m) =
-  let rev : bits(8) = if m <_s 0x00 then not_vec (m) + 0x01 else m;
-  let sa : bits(8) = if rev == to_bits(8, 'n) then to_bits(8, 'n) - 0x01 else rev;
+  let rev : bits(8) = if m <_s 0x00 then not_vec (m) + 0x01 else m in
+  let sa : bits(8) = if rev == to_bits(8, 'n) then to_bits(8, 'n) - 0x01 else rev in
   if m <_s 0x00 then shift_right_arith_u(v, sa)
   else kshift_left_logic(v, sa)
 
@@ -234,13 +226,12 @@ function umin (v, m) =
   if unsigned(v) < unsigned(m)
   then v
   else m
-
 /* clip value auxiliary functions */
 val sclip : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n), bits(8)) -> bits('n) effect {rreg, wreg}
 function sclip (v, m) =
-  let ub : bits('n) = ((zeros('n) + 1) << m) - 1;
-  let lb : bits('n) = not_vec (ub);
+  let ub : bits('n) = ((zeros('n) + 1) << m) - 1 in
+  let lb : bits('n) = not_vec (ub) in
   if v <_s lb then { pext_write_OV (0b1); lb }
   else if ub <_s v then { pext_write_OV (0b1); ub }
   else v
@@ -248,21 +239,20 @@ function sclip (v, m) =
 val uclip : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n), bits(8)) -> bits('n) effect {rreg, wreg}
 function uclip (v, m) =
-  let ub : bits('n) = ((zeros('n) + 1) << m) - 1;
-  let lb : bits('n) = zeros('n);
+  let ub : bits('n) = ((zeros('n) + 1) << m) - 1 in
+  let lb : bits('n) = zeros('n) in
   if ub <_s v then { pext_write_OV (0b1); ub }
   else if v <_s lb then { pext_write_OV (0b1); lb }
   else v
-
 /* absolute value auxiliary functions */
+
 val kabs : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n)) -> bits('n) effect {rreg, wreg}
 function kabs (v) =
-  let lb : bits('n) = not_vec( sail_ones ('n) >> 1);
-  if v == lb then { pext_write_OV (0b1); not_vec(lb)}
-  else if v <_s zeros('n) then { pext_write_OV (0b1); not_vec(v) + 1}
+  let lb : bits('n) = not_vec( sail_ones ('n) >> 1) in
+  if v == lb then { pext_write_OV (0b1); not_vec(lb) }
+  else if v <_s zeros('n) then { pext_write_OV (0b1); not_vec(v) + 1 }
   else v
-
 /* count redudant bit auxiliary functions */
 val clrs : forall 'n, 'n == 8 | 'n == 16 | 'n == 32.
   (bits('n)) -> bits('n)
@@ -310,8 +300,8 @@ function clo (v) = {
 val q15 : 
   bits(33) -> bits(16) effect {rreg, wreg}
 function q15 (v) =
-  let ub : bits(33) = EXTS(0x7FFF);
-  let lb : bits(33) = EXTS(0x8000);
+  let ub : bits(33) = EXTS(0x7FFF) in
+  let lb : bits(33) = EXTS(0x8000) in
   if v <_s lb then { pext_write_OV (0b1); 0x8000;}
   else if ub <_s v then { pext_write_OV (0b1); 0x7FFF;}
   else v[15..0]
@@ -319,15 +309,15 @@ function q15 (v) =
 val q15_l_u : 
   bits(33) -> bits(16) effect {rreg, wreg}
 function q15_l_u (v) =
-  let ub : bits(33) = EXTZ(0xFFFF);
+  let ub : bits(33) = EXTZ(0xFFFF) in
   if ub <_u v then { pext_write_OV (0b1); 0xFFFF;}
   else v[15..0]
 
 val q15_s_u : 
   bits(33) -> bits(16) effect {rreg, wreg}
 function q15_s_u (v) =
-  let ub : bits(33) = EXTZ(0xFFFF);
-  let lb : bits(33) = EXTZ(0x0000);
+  let ub : bits(33) = EXTZ(0xFFFF) in
+  let lb : bits(33) = EXTZ(0x0000) in
   if ub <_s v then { pext_write_OV (0b1); 0xFFFF;}
   else if v <_s lb then { pext_write_OV (0b1); 0x0000;}
   else v[15..0]
@@ -337,16 +327,25 @@ val signed_saturating_mul_16 :
 function signed_saturating_mul_16 (v1, v2)=
   if (v1 != 0x8000) | (v2 != 0x8000)
   then 
-  let res : bits(32) = to_bits(32, signed(v1) * signed(v2));
-  let rshift : bits(32) = EXTS(res >> 15); 
+  let res : bits(32) = to_bits(32, signed(v1) * signed(v2)) in
+  let rshift : bits(32) = EXTS(res >> 15) in 
   rshift[15..0]
   else { pext_write_OV (0b1); 0x7FFF;}
 
-/* q31 auxiliary functions */
+/* q31 saturation auxiliary functions */
+val q31 :
+  (bits (33)) -> bits (32) effect {rreg,wreg}
+function q31 (res) = {
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
+  let lb : bits(33) = not_vec (ub);
+  if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
+  else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
+  else { slice(res, 0, 32) }
+}
 val kdm :
   (bits(16), bits(16)) -> bits(32) effect {rreg,wreg}
 function kdm (v1, v2) =
-  let lb : bits(16) = not_vec(EXTS(sail_ones (16) >> 1));
+  let lb : bits(16) = not_vec(EXTS(sail_ones (16) >> 1)) in
   if v1 == lb & v2 == lb then { pext_write_OV (0b1); ones (32) >> 1 }
   else { to_bits (31, signed(v1) * signed(v2)) @ 0b0 }
 
@@ -355,14 +354,15 @@ val kdmaw :
 function kdmaw (v1, v2, rd) = {
   let resQ31 : bits(32) = kdm(v1, v2);
   let tmp : bits(33) = EXTS(resQ31) + EXTS(rd);
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
   if tmp <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s tmp then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice (tmp, 0, 32) }
 }
 
 /* bit reverse auxiliary functions */
+/*
 val bitrev32 :
   (bits(32)) -> bits(32)
 function bitrev32 (v) = {
@@ -385,14 +385,15 @@ function bitrev64 (v) = {
   tmp = 0x00000000 @ ((tmp[111..48] & 0x0000FFFF0000FFFF) | (tmp[79..16] & 0xFFFF0000FFFF0000)) @ 0x00000000;
   ((tmp[127..64] & 0x00000000FFFFFFFF) | (tmp[63..0]  & 0xFFFFFFFF00000000))
 }
-
+*/
 /* Most Significant Word mul add auxiliary function */
+/*
 val kmsbmac :
   (bits (32), bits (32), bits (32)) -> bits (32) effect {rreg,wreg}
 function kmsbmac (v1, v2, rd) =
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
-  let res : bits(33) = add_bits(EXTS(msb_smul(v1, v2)), EXTS(rd));
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
+  let res : bits(33) = add_bits(EXTS(msbsmul(v1, v2)), EXTS(rd)) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice(res, 0, 32) }
@@ -400,9 +401,9 @@ function kmsbmac (v1, v2, rd) =
 val kmsbmac_u :
   (bits (32), bits (32), bits (32)) -> bits (32) effect {rreg,wreg}
 function kmsbmac_u (v1, v2, rd) =
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
-  let res : bits(33) = add_bits(EXTS(msb_smul_u(v1, v2)), EXTS(rd));
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
+  let res : bits(33) = add_bits(EXTS(msbsmul_u(v1, v2)), EXTS(rd)) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice(res, 0, 32) }
@@ -410,9 +411,9 @@ function kmsbmac_u (v1, v2, rd) =
 val kmsbsb :
   (bits (32), bits (32), bits (32)) -> bits (32) effect {rreg,wreg}
 function kmsbsb (v1, v2, rd) =
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
-  let res : bits(33) = sub_bits(EXTS(rd), EXTS(msb_smul(v1, v2)));
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
+  let res : bits(33) = sub_bits(EXTS(rd), EXTS(msbsmul(v1, v2))) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice(res, 0, 32) }
@@ -420,9 +421,9 @@ function kmsbsb (v1, v2, rd) =
 val kmsbsb_u :
   (bits (32), bits (32), bits (32)) -> bits (32) effect {rreg,wreg}
 function kmsbsb_u (v1, v2, rd) =
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
-  let res : bits(33) = sub_bits(EXTS(rd), EXTS(msb_smul_u(v1, v2)));
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
+  let res : bits(33) = sub_bits(EXTS(rd), EXTS(msbsmul_u(v1, v2))) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice(res, 0, 32) }
@@ -439,12 +440,15 @@ val kwmsbmul_u :
 function kwmsbmul_u (v1, v2) =
   if (v1 != 0x80000000) | (v2 != 0x80000000)
   then
-  let mres : bits(64) = smul(v1, v2);
-  let round33 : bits(34) = add_bits(mres[63..30], EXTZ(0x1));
+  let mres : bits(64) = smul(v1, v2) in
+  let round33 : bits(34) = add_bits(mres[63..30], EXTZ(0x1)) in
   round33[32..1]
   else { pext_write_OV (0b1); 0x7FFFFFFF }
+*/
+
 
 /* SIMD Most Significant Word Signed Multiply Word and Bottom Half */
+/*
 val smmw :
   (bits(32), bits(16)) -> bits(32)
 function smmw (v1, v2) =
@@ -458,10 +462,10 @@ function smmw_u (v1, v2) =
 val kmmaw :
   (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
 function kmmaw (v1, v2, rd) =
-  let mres : bits(48) = to_bits(48, signed(v1) * signed(v2));
-  let res : bits(33) = add_bits(EXTS(rd), EXTS(mres[47..16]));
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
+  let mres : bits(48) = to_bits(48, signed(v1) * signed(v2)) in
+  let res : bits(33) = add_bits(EXTS(rd), EXTS(mres[47..16])) in
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice(res, 0, 32) }
@@ -469,11 +473,11 @@ function kmmaw (v1, v2, rd) =
 val kmmaw_u :
   (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
 function kmmaw_u (v1, v2, rd) =
-  let mres : bits(48) = to_bits(48, signed(v1) * signed(v2));
-  let round33 : bits(33) = add_bits(mres[47..15], EXTS(0x1));
-  let res : bits(33) = add_bits(EXTS(rd), EXTS(round33[32..1]));
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
+  let mres : bits(48) = to_bits(48, signed(v1) * signed(v2)) in
+  let round33 : bits(33) = add_bits(mres[47..15], EXTS(0x1)) in
+  let res : bits(33) = add_bits(EXTS(rd), EXTS(round33[32..1])) in
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice(res, 0, 32) }
@@ -484,10 +488,10 @@ function kmmaw2 (v1, v2, rd) =
   let addop : bits(32) =
   if (v1 != 0x80000000) | (v2 != 0x8000)
   then to_bits(48, signed(v1) * signed(v2))[46..15]
-  else {pext_write_OV (0b1); 0x7FFFFFFF};
-  let res : bits(33) = add_bits(EXTS(rd), EXTS(addop));
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
+  else {pext_write_OV (0b1); 0x7FFFFFFF} in
+  let res : bits(33) = add_bits(EXTS(rd), EXTS(addop)) in
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice(res, 0, 32) }
@@ -495,14 +499,14 @@ function kmmaw2 (v1, v2, rd) =
 val kmmaw2_u :
   (bits(32), bits(16), bits(32)) -> bits(32) effect {rreg,wreg}
 function kmmaw2_u (v1, v2, rd) =
-  let round34 : bits(34) = add_bits(to_bits(48, signed(v1) * signed(v2))[47..14], EXTS(0x1));
+  let round34 : bits(34) = add_bits(to_bits(48, signed(v1) * signed(v2))[47..14], EXTS(0x1)) in
   let addop : bits(32) =
   if (v1 != 0x80000000) | (v2 != 0x8000)
   then round34[32..1]
-  else {pext_write_OV (0b1); 0x7FFFFFFF};
-  let res : bits(33) = add_bits(EXTS(rd), EXTS(addop));
-  let ub : bits(33) = EXTS(sail_ones (32) >> 1);
-  let lb : bits(33) = not_vec (ub);
+  else {pext_write_OV (0b1); 0x7FFFFFFF} in
+  let res : bits(33) = add_bits(EXTS(rd), EXTS(addop)) in
+  let ub : bits(33) = EXTS(sail_ones (32) >> 1) in
+  let lb : bits(33) = not_vec (ub) in
   if res <_s lb then { pext_write_OV (0b1); not_vec (ones (32) >> 1) }
   else if ub <_s res then { pext_write_OV (0b1); ones (32) >> 1 }
   else { slice(res, 0, 32) }
@@ -520,30 +524,31 @@ function kmmw2_u (v1, v2) =
   if (v1 == 0x80000000) & (v2 == 0x8000)
   then { pext_write_OV (0b1); 0x7FFFFFFF }
   else
-  let round : bits(33) = add_bits( to_bits(48, signed(v1) * signed(v2))[46..14], EXTS(0x1));
+  let round : bits(33) = add_bits( to_bits(48, signed(v1) * signed(v2))[46..14], EXTS(0x1)) in
   round[32..1]
 
+*/
 /* 16 * 32 mul add auxility function */
 val kmda : forall 'n, 'n == 16 | 'n == 32.
   (bits ('n), bits ('n), bits ('n), bits ('n)) -> bits ('n + 'n)
   effect {rreg,wreg}
 function kmda (a, b, c, d) =
-  let lb : bits ('n) = if 'n == 16 then 0x8000 else 0x80000000;
+  let lb : bits ('n) = if 'n == 16 then 0x8000 else 0x80000000 in
   if (a == lb & b == lb & c == lb & d == lb) then {
     pext_write_OV (0b1);
     sail_ones (2 * 'n) >> 1
   } else
-    let ab = to_bits (2 * 'n, signed (a) * signed (b));
-    let cd = to_bits (2 * 'n, signed (c) * signed (d));
+    let ab = to_bits (2 * 'n, signed (a) * signed (b)) in
+    let cd = to_bits (2 * 'n, signed (c) * signed (d)) in
     ab + cd
 
 val kmada : forall 'n, 'n == 16 | 'n == 32.
   (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
   effect {rreg,wreg}
 function kmada (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) + EXTS(smul(rs10, rs20));
+  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
+  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
+  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) + EXTS(smul(rs10, rs20)) in
   if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
   else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
   else { slice(res, 0, 2 * 'n) }
@@ -552,9 +557,9 @@ val kmads : forall 'n, 'n == 16 | 'n == 32.
   (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
   effect {rreg,wreg}
 function kmads (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20));
+  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
+  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
+  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20)) in
   if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
   else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
   else { slice(res, 0, 2 * 'n) }
@@ -563,9 +568,9 @@ val kmsda : forall 'n, 'n == 16 | 'n == 32.
   (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
   effect {rreg,wreg}
 function kmsda (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) - EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20));
+  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
+  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
+  let res : bits(66) = EXTS(rd) - EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20)) in
   if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
   else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
   else { slice(res, 0, 2 * 'n) }

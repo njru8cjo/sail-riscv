@@ -93,7 +93,7 @@ function clause execute (PEXT_ALU_CMP_16 (rs2, rs1, rd, op)) = {
       UCMPLT16  => ucmplt(rs1_half, rs2_half),
       UCMPLE16  => ucmple(rs1_half, rs2_half),
       SMAX16    => smax(rs1_half, rs2_half),
-      SMIN16    => smix(rs1_half, rs2_half),
+      SMIN16    => smin(rs1_half, rs2_half),
       UMAX16    => umax(rs1_half, rs2_half),
       UMIN16    => umin(rs1_half, rs2_half)
     };
@@ -727,7 +727,7 @@ mapping clause encdec = PEXT_IMM3(imm3, rs1, rd, UCLIP8) <->
 
 function clause execute (PEXT_IMM3(imm3, rs1, rd, op)) = {
   let rs1_val = X(rs1);
-  let sa : byte = EXTZ(imm3);
+  let sa : bits(8) = EXTZ(imm3);
   result : xlenbits = zeros();
   foreach (i from 0 to (sizeof(xlen) - 8) by 8) {
     let rs1_byte = slice(rs1_val, i, 8);
