@@ -533,3 +533,74 @@ val sumul : forall 'n, 'n == 8.
   (bits('n), bits('n)) -> bits(32)
 function sumul (v1, v2) =
   to_bits (32, signed(v1) * signed(0b0 @ v2))
+
+/* Multiply and add /subtract auxiliary functions */
+val signed_mul_two_half_and_add : forall 'n, 'n == 16 | 'n == 32.
+  (bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
+  effect {rreg,wreg}
+function signed_mul_two_half_and_add (a, b, c, d) = {
+  let lb : bits ('n) = if 'n == 16 then 0x8000 else 0x80000000;
+  if (a == lb & b == lb & c == lb & d == lb) then {
+    pext_write_OV (0b1);
+    sail_ones (2 * 'n) >> 1
+  } else {
+    let ab = to_bits (2 * 'n, signed (a) * signed (b));
+    let cd = to_bits (2 * 'n, signed (c) * signed (d));
+    ab + cd
+  }
+}
+
+val saturating_signed_mul_two_words_and_two_adds : forall 'n, 'n == 16 | 'n == 32.
+  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
+  effect {rreg,wreg}
+function saturating_signed_mul_two_words_and_two_adds (rd, rs11, rs21, rs10, rs20) =
+  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
+  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
+  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) + EXTS(smul(rs10, rs20)) in
+  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
+  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
+  else { slice(res, 0, 2 * 'n) }
+
+val saturating_signed_mul_two_words_and_sub : forall 'n, 'n == 16 | 'n == 32.
+  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
+  effect {rreg,wreg}
+function saturating_signed_mul_two_words_and_sub (rd, rs11, rs21, rs10, rs20) =
+  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
+  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
+  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20)) in
+  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
+  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
+  else { slice(res, 0, 2 * 'n) }
+
+val saturating_signed_mul_two_halfs_and_add_and_sub : forall 'n, 'n == 16 | 'n == 32.
+  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
+  effect {rreg,wreg}
+function saturating_signed_mul_two_halfs_and_add_and_sub (rd, rs11, rs21, rs10, rs20) =
+  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
+  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
+  let res : bits(66) = EXTS(rd) - EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20)) in
+  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
+  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
+  else { slice(res, 0, 2 * 'n) }
+
+val kmads : forall 'n, 'n == 16 | 'n == 32.
+  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
+  effect {rreg,wreg}
+function kmads (rd, rs11, rs21, rs10, rs20) =
+  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
+  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
+  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20)) in
+  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
+  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
+  else { slice(res, 0, 2 * 'n) }
+
+val kmsda : forall 'n, 'n == 16 | 'n == 32.
+  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
+  effect {rreg,wreg}
+function kmsda (rd, rs11, rs21, rs10, rs20) =
+  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1)) in
+  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1) in
+  let res : bits(66) = EXTS(rd) - EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20)) in
+  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
+  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
+  else { slice(res, 0, 2 * 'n) }

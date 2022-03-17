@@ -1,3 +1,74 @@
+/*=======================================================================================*/
+/*  RISCV Sail Model                                                                     */
+/*                                                                                       */
+/*  This Sail RISC-V architecture model, comprising all files and                        */
+/*  directories except for the snapshots of the Lem and Sail libraries                   */
+/*  in the prover_snapshots directory (which include copies of their                     */
+/*  licences), is subject to the BSD two-clause licence below.                           */
+/*                                                                                       */
+/*  Copyright (c) 2017-2021                                                              */
+/*    Prashanth Mundkur                                                                  */
+/*    Rishiyur S. Nikhil and Bluespec, Inc.                                              */
+/*    Jon French                                                                         */
+/*    Brian Campbell                                                                     */
+/*    Robert Norton-Wright                                                               */
+/*    Alasdair Armstrong                                                                 */
+/*    Thomas Bauereiss                                                                   */
+/*    Shaked Flur                                                                        */
+/*    Christopher Pulte                                                                  */
+/*    Peter Sewell                                                                       */
+/*    Alexander Richardson                                                               */
+/*    Hesham Almatary                                                                    */
+/*    Jessica Clarke                                                                     */
+/*    Microsoft, for contributions by Robert Norton-Wright and Nathaniel Wesley Filardo  */
+/*    Peter Rugg                                                                         */
+/*    Aril Computer Corp., for contributions by Scott Johnson                            */
+/*                                                                                       */
+/*  All rights reserved.                                                                 */
+/*                                                                                       */
+/*  This software was developed by the above within the Rigorous                         */
+/*  Engineering of Mainstream Systems (REMS) project, partly funded by                   */
+/*  EPSRC grant EP/K008528/1, at the Universities of Cambridge and                       */
+/*  Edinburgh.                                                                           */
+/*                                                                                       */
+/*  This software was developed by SRI International and the University of               */
+/*  Cambridge Computer Laboratory (Department of Computer Science and                    */
+/*  Technology) under DARPA/AFRL contract FA8650-18-C-7809 ("CIFV"), and                 */
+/*  under DARPA contract HR0011-18-C-0016 ("ECATS") as part of the DARPA                 */
+/*  SSITH research programme.                                                            */
+/*                                                                                       */
+/*  This project has received funding from the European Research Council                 */
+/*  (ERC) under the European Union’s Horizon 2020 research and innovation                */
+/*  programme (grant agreement 789108, ELVER).                                           */
+/*                                                                                       */
+/*                                                                                       */
+/*  Redistribution and use in source and binary forms, with or without                   */
+/*  modification, are permitted provided that the following conditions                   */
+/*  are met:                                                                             */
+/*  1. Redistributions of source code must retain the above copyright                    */
+/*     notice, this list of conditions and the following disclaimer.                     */
+/*  2. Redistributions in binary form must reproduce the above copyright                 */
+/*     notice, this list of conditions and the following disclaimer in                   */
+/*     the documentation and/or other materials provided with the                        */
+/*     distribution.                                                                     */
+/*                                                                                       */
+/*  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS''                   */
+/*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED                    */
+/*  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A                      */
+/*  PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR                  */
+/*  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,                         */
+/*  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT                     */
+/*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF                     */
+/*  USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND                  */
+/*  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,                   */
+/*  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT                   */
+/*  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF                   */
+/*  SUCH DAMAGE.                                                                         */
+/*=======================================================================================*/
+
+/* *****************************************************************/
+/* This file specifies the Partial-SIMD Data Processing Instructions added by the 'P' extension. */
+
 /* Programming Langauge Lab, Department of Computer Science, National Tsing-Hua University, Taiwan */
 /* Academia Sinica, Taiwan*/
 /* Andes Technology Corporation*/
@@ -363,51 +434,8 @@ mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMSDA)  <->
 mapping clause encdec = PEXT_16_32_MUL_ADD(rs2, rs1, rd, KMSXDA) <->
   0b0100111 @ rs2 @ rs1 @ 0b001 @ rd @ 0b1110111
 
-val signed_mul_two_half_and_add : forall 'n, 'n == 16 | 'n == 32.
-  (bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
-  effect {rreg,wreg}
-function signed_mul_two_half_and_add (a, b, c, d) =
-  let lb : bits ('n) = if 'n == 16 then 0x8000 else 0x80000000;
-  if (a == lb & b == lb & c == lb & d == lb) then {
-    pext_write_OV (0b1);
-    sail_ones (2 * 'n) >> 1
-  } else
-    let ab = to_bits (2 * 'n, signed (a) * signed (b));
-    let cd = to_bits (2 * 'n, signed (c) * signed (d));
-    ab + cd
 
-val saturating_signed_mul_two_words_and_two_adds : forall 'n, 'n == 16 | 'n == 32.
-  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
-  effect {rreg,wreg}
-function saturating_signed_mul_two_words_and_two_adds (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) + EXTS(smul(rs10, rs20));
-  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
-  else { slice(res, 0, 2 * 'n) }
 
-val saturating_signed_mul_two_words_and_sub : forall 'n, 'n == 16 | 'n == 32.
-  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
-  effect {rreg,wreg}
-function saturating_signed_mul_two_words_and_sub (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20));
-  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
-  else { slice(res, 0, 2 * 'n) }
-
-val saturating_signed_mul_two_halfs_and_add_and_sub : forall 'n, 'n == 16 | 'n == 32.
-  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
-  effect {rreg,wreg}
-function saturating_signed_mul_two_halfs_and_add_and_sub (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) - EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20));
-  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
-  else { slice(res, 0, 2 * 'n) }
 
 function clause execute (PEXT_16_32_MUL_ADD(rs2, rs1, rd, op)) = {
   let rs1_val = X(rs1);
