@@ -524,52 +524,6 @@ function kmmw2_u (v1, v2) =
   round[32..1]
 
 /* 16 * 32 mul add auxility function */
-val kmda : forall 'n, 'n == 16 | 'n == 32.
-  (bits ('n), bits ('n), bits ('n), bits ('n)) -> bits ('n + 'n)
-  effect {rreg,wreg}
-function kmda (a, b, c, d) =
-  let lb : bits ('n) = if 'n == 16 then 0x8000 else 0x80000000;
-  if (a == lb & b == lb & c == lb & d == lb) then {
-    pext_write_OV (0b1);
-    sail_ones (2 * 'n) >> 1
-  } else
-    let ab = to_bits (2 * 'n, signed (a) * signed (b));
-    let cd = to_bits (2 * 'n, signed (c) * signed (d));
-    ab + cd
-
-val kmada : forall 'n, 'n == 16 | 'n == 32.
-  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
-  effect {rreg,wreg}
-function kmada (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) + EXTS(smul(rs10, rs20));
-  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
-  else { slice(res, 0, 2 * 'n) }
-
-val kmads : forall 'n, 'n == 16 | 'n == 32.
-  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
-  effect {rreg,wreg}
-function kmads (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) + EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20));
-  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
-  else { slice(res, 0, 2 * 'n) }
-
-val kmsda : forall 'n, 'n == 16 | 'n == 32.
-  (bits(2 * 'n), bits ('n), bits ('n), bits ('n), bits ('n)) -> bits (2 * 'n)
-  effect {rreg,wreg}
-function kmsda (rd, rs11, rs21, rs10, rs20) =
-  let lb : bits(66) = not_vec(EXTS(sail_ones (2 * 'n) >> 1));
-  let ub : bits(66) = EXTS(sail_ones (2 * 'n) >> 1);
-  let res : bits(66) = EXTS(rd) - EXTS(smul(rs11, rs21)) - EXTS(smul(rs10, rs20));
-  if res <_s lb then { pext_write_OV (0b1); slice(lb, 0, 2 * 'n) }
-  else if ub <_s res then { pext_write_OV (0b1); slice(ub, 0, 2 * 'n) }
-  else { slice(res, 0, 2 * 'n) }
-
 val sumul : forall 'n, 'n == 8.
   (bits('n), bits('n)) -> bits(32)
 function sumul (v1, v2) =
